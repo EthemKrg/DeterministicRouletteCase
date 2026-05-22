@@ -11,6 +11,7 @@ public class GameFlowController : MonoBehaviour
 
     public event Action OnGameStateChanged;
     public event Action<RoundResult> OnRoundResolved;
+    public event Action<string> OnFeedbackRequested;
 
     private void Awake()
     {
@@ -22,7 +23,11 @@ public class GameFlowController : MonoBehaviour
 
     public void SetWheelType(RouletteWheelType wheelType)
     {
-        GameState.SetWheelType(wheelType);
+        bool changed = GameState.SetWheelType(wheelType);
+
+        if (changed)
+            OnFeedbackRequested?.Invoke("Wheel type changed. Active bets were cleared.");
+
         NotifyStateChanged();
     }
 
