@@ -34,12 +34,18 @@ public class RouletteGameState
         }
     }
 
-    public void SetWheelType(RouletteWheelType wheelType)
+    public bool SetWheelType(RouletteWheelType wheelType)
     {
-        if (activeBets.Count > 0)
-            throw new System.InvalidOperationException("Wheel type cannot be changed while active bets exist.");
+        if (!CanAcceptBets)
+            throw new System.InvalidOperationException("Wheel type can only be changed during betting state.");
 
+        if (WheelType == wheelType)
+            return false;
+
+        ClearBets();
         WheelType = wheelType;
+
+        return true;
     }
 
     public bool CanPlaceBet(int stake, out string reason)

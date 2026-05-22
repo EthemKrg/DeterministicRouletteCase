@@ -1,3 +1,4 @@
+using System;
 using System.Text;
 using TMPro;
 using UnityEngine;
@@ -5,6 +6,8 @@ using UnityEngine.UI;
 
 public class DebugGameFlowUI : MonoBehaviour
 {
+    private const string DefaultSlotId = "17";
+
     [Header("References")]
     [SerializeField] private GameFlowController gameFlowController;
 
@@ -39,7 +42,7 @@ public class DebugGameFlowUI : MonoBehaviour
 
     private void Awake()
     {
-        addStraightButton.onClick.AddListener(AddStraightBet);
+        addStraightButton.onClick.AddListener(() => AddBet(() => gameFlowController.PlaceStraightBet(straightBetSlotInput.text, GetStake())));
         addRedButton.onClick.AddListener(() => AddBet(() => gameFlowController.PlaceRedBet(GetStake())));
         addBlackButton.onClick.AddListener(() => AddBet(() => gameFlowController.PlaceBlackBet(GetStake())));
         addEvenButton.onClick.AddListener(() => AddBet(() => gameFlowController.PlaceEvenBet(GetStake())));
@@ -60,6 +63,12 @@ public class DebugGameFlowUI : MonoBehaviour
         wheelTypeDropdown.onValueChanged.AddListener(OnWheelTypeChanged);
     }
 
+    private void Start()
+    {
+        SetDefaultInputValues();
+        Refresh();
+    }
+
     private void OnEnable()
     {
         gameFlowController.OnGameStateChanged += Refresh;
@@ -73,6 +82,27 @@ public class DebugGameFlowUI : MonoBehaviour
         gameFlowController.OnRoundResolved -= RefreshLastRound;
     }
 
+    private void SetDefaultInputValues()
+    {
+        if (gameFlowController == null || gameFlowController.GameState == null)
+            return;
+
+        if (stakeInput != null && string.IsNullOrWhiteSpace(stakeInput.text))
+            stakeInput.text = gameFlowController.GameState.MinBet.ToString();
+
+        if (winningSlotInput != null && string.IsNullOrWhiteSpace(winningSlotInput.text))
+            winningSlotInput.text = DefaultSlotId;
+
+        if (straightBetSlotInput != null && string.IsNullOrWhiteSpace(straightBetSlotInput.text))
+            straightBetSlotInput.text = DefaultSlotId;
+
+        if (wheelTypeDropdown != null)
+        {
+            int wheelTypeIndex = gameFlowController.GameState.WheelType == RouletteWheelType.American ? 1 : 0;
+            wheelTypeDropdown.SetValueWithoutNotify(wheelTypeIndex);
+        }
+    }
+
     private void AddBet(System.Action placeBetAction)
     {
         try
@@ -83,18 +113,6 @@ public class DebugGameFlowUI : MonoBehaviour
         catch (System.Exception exception)
         {
             ShowFeedback(exception.Message);
-        }
-    }
-
-    private void AddBet(System.Action placeBetAction)
-    {
-        try
-        {
-            placeBetAction?.Invoke();
-        }
-        catch (System.Exception exception)
-        {
-            Debug.LogWarning(exception.Message);
         }
     }
 
@@ -124,6 +142,7 @@ public class DebugGameFlowUI : MonoBehaviour
         try
         {
             gameFlowController.SetWheelType(wheelType);
+            ShowFeedback($"Wheel type set to {wheelType}. Active bets were refunded.");
         }
         catch (System.Exception exception)
         {
@@ -137,7 +156,11 @@ public class DebugGameFlowUI : MonoBehaviour
         if (int.TryParse(stakeInput.text, out int stake))
             return stake;
 
-        return 10;
+        int defaultStake = gameFlowController.GameState.MinBet;
+        stakeInput.text = defaultStake.ToString();
+        ShowFeedback($"Invalid stake. Min stake is {defaultStake}.");
+
+        return defaultStake;
     }
 
     private void Refresh()
