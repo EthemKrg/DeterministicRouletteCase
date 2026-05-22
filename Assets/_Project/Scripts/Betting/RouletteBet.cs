@@ -11,13 +11,10 @@ public class RouletteBet
     public int PayoutMultiplier { get; private set; }
     public IReadOnlyList<string> CoveredSlotIds => coveredSlotIds;
 
-    public RouletteBet(BetType type, int stake, int payoutMultiplier, IEnumerable<string> coveredSlotIds)
+    public RouletteBet(BetType type, int stake, IEnumerable<string> coveredSlotIds)
     {
         if (stake <= 0)
             throw new ArgumentException("Stake must be greater than zero.", nameof(stake));
-
-        if (payoutMultiplier <= 0)
-            throw new ArgumentException("Payout multiplier must be greater than zero.", nameof(payoutMultiplier));
 
         if (coveredSlotIds == null)
             throw new ArgumentNullException(nameof(coveredSlotIds));
@@ -29,7 +26,7 @@ public class RouletteBet
 
         Type = type;
         Stake = stake;
-        PayoutMultiplier = payoutMultiplier;
+        PayoutMultiplier = PayoutCalculator.GetMultiplier(type);
     }
 
     public bool CoversSlot(string slotId)
