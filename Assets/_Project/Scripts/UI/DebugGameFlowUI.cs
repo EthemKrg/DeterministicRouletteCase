@@ -42,7 +42,8 @@ public class DebugGameFlowUI : MonoBehaviour
 
     private void Awake()
     {
-        addStraightButton.onClick.AddListener(() => AddBet(() => gameFlowController.PlaceStraightBet(straightBetSlotInput.text, GetStake())));
+        addStraightButton.onClick.AddListener(AddStraightBet);
+
         addRedButton.onClick.AddListener(() => AddBet(() => gameFlowController.PlaceRedBet(GetStake())));
         addBlackButton.onClick.AddListener(() => AddBet(() => gameFlowController.PlaceBlackBet(GetStake())));
         addEvenButton.onClick.AddListener(() => AddBet(() => gameFlowController.PlaceEvenBet(GetStake())));
@@ -57,6 +58,18 @@ public class DebugGameFlowUI : MonoBehaviour
         addColumn1Button.onClick.AddListener(() => AddBet(() => gameFlowController.PlaceColumnBet(1, GetStake())));
         addColumn2Button.onClick.AddListener(() => AddBet(() => gameFlowController.PlaceColumnBet(2, GetStake())));
         addColumn3Button.onClick.AddListener(() => AddBet(() => gameFlowController.PlaceColumnBet(3, GetStake())));
+
+        winningSlotInput.onEndEdit.AddListener(_ =>
+        {
+            ValidateInputs(true);
+            UpdateActionButtons();
+        });
+
+        straightBetSlotInput.onEndEdit.AddListener(_ =>
+        {
+            ValidateInputs(true);
+            UpdateActionButtons();
+        });
 
         spinButton.onClick.AddListener(Spin);
         clearBetsButton.onClick.AddListener(ClearBets);
@@ -88,13 +101,13 @@ public class DebugGameFlowUI : MonoBehaviour
             return;
 
         if (stakeInput != null && string.IsNullOrWhiteSpace(stakeInput.text))
-            stakeInput.text = gameFlowController.GameState.MinBet.ToString();
+            stakeInput.SetTextWithoutNotify(gameFlowController.GameState.MinBet.ToString());
 
         if (winningSlotInput != null && string.IsNullOrWhiteSpace(winningSlotInput.text))
-            winningSlotInput.text = DefaultSlotId;
+            winningSlotInput.SetTextWithoutNotify(DefaultSlotId);
 
         if (straightBetSlotInput != null && string.IsNullOrWhiteSpace(straightBetSlotInput.text))
-            straightBetSlotInput.text = DefaultSlotId;
+            straightBetSlotInput.SetTextWithoutNotify(DefaultSlotId);
 
         if (wheelTypeDropdown != null)
         {
@@ -103,28 +116,52 @@ public class DebugGameFlowUI : MonoBehaviour
         }
     }
 
-    private void AddBet(System.Action placeBetAction)
+    private void AddBet(Action placeBetAction)
     {
         try
         {
             placeBetAction?.Invoke();
             ShowFeedback("Bet placed.");
+            UpdateActionButtons();
         }
-        catch (System.Exception exception)
+        catch (Exception exception)
         {
-            ShowFeedback(exception.Message);
+            ShowFeedback(exception.Message, true);
+            UpdateActionButtons();
         }
+    }
+
+    // Straight bet input is separate from deterministic result input.
+    private void AddStraightBet()
+    {
+        string slotId = straightBetSlotInput.text.Trim();
+
+        if (!IsSlotValid(slotId))
+        {
+            ShowFeedback($"Straight bet slot '{slotId}' is not valid for {gameFlowController.GameState.WheelType} roulette.", true);
+            return;
+        }
+
+        AddBet(() => gameFlowController.PlaceStraightBet(slotId, GetStake()));
     }
 
     private void Spin()
     {
+        string slotId = winningSlotInput.text.Trim();
+
+        if (!IsSlotValid(slotId))
+        {
+            ShowFeedback($"Result slot '{slotId}' is not valid for {gameFlowController.GameState.WheelType} roulette.", true);
+            return;
+        }
+
         try
         {
-            gameFlowController.Spin(winningSlotInput.text);
+            gameFlowController.Spin(slotId);
         }
-        catch (System.Exception exception)
+        catch (Exception exception)
         {
-            ShowFeedback(exception.Message);
+            ShowFeedback(exception.Message, true);
         }
     }
 
@@ -135,19 +172,35 @@ public class DebugGameFlowUI : MonoBehaviour
 
     private void OnWheelTypeChanged(int index)
     {
-        RouletteWheelType wheelType = index == 1
-            ? RouletteWheelType.American
-            : RouletteWheelType.European;
+        RouletteWheelType wheelType = index == 0
+            ? RouletteWheelType.European
+            : RouletteWheelType.American;
 
         try
         {
+            bool hadActiveBets = gameFlowController.GameState.ActiveBets.Count > 0;
+
             gameFlowController.SetWheelType(wheelType);
-            ShowFeedback($"Wheel type set to {wheelType}. Active bets were refunded.");
+
+            Refresh();
+            ValidateInputs(true);
+            UpdateActionButtons();
+
+            if (hadActiveBets)
+                ShowFeedback($"Wheel type set to {wheelType}. Active bets were refunded.");
+            else
+                ShowFeedback($"Wheel type set to {wheelType}.");
         }
-        catch (System.Exception exception)
+        catch (Exception exception)
         {
-            Debug.LogWarning(exception.Message);
-            wheelTypeDropdown.SetValueWithoutNotify(gameFlowController.GameState.WheelType == RouletteWheelType.American ? 1 : 0);
+            ShowFeedback(exception.Message, true);
+
+            int currentIndex = gameFlowController.GameState.WheelType == RouletteWheelType.European ? 0 : 1;
+            wheelTypeDropdown.SetValueWithoutNotify(currentIndex);
+
+            Refresh();
+            ValidateInputs(true);
+            UpdateActionButtons();
         }
     }
 
@@ -173,7 +226,7 @@ public class DebugGameFlowUI : MonoBehaviour
 
         StringBuilder builder = new StringBuilder();
         builder.AppendLine($"Wheel: {state.WheelType}");
-        builder.AppendLine($"Chips: {state.CurrentChips}");
+        builder.AppendLine($"Chips: {state.StartingChips}");
         builder.AppendLine($"Active Bets: {state.ActiveBets.Count}");
         builder.AppendLine();
         builder.AppendLine($"Spins: {stats.TotalSpins}");
@@ -185,6 +238,8 @@ public class DebugGameFlowUI : MonoBehaviour
         builder.AppendLine($"Last Round Net: {stats.LastRoundNetProfit}");
 
         stateText.text = builder.ToString();
+
+        UpdateActionButtons();
     }
 
     private void RefreshLastRound(RoundResult result)
@@ -203,11 +258,59 @@ public class DebugGameFlowUI : MonoBehaviour
             $"Player Win Feedback: {result.HasAnyWinningBet}";
     }
 
-    private void ShowFeedback(string message)
+    private void ShowFeedback(string message, bool logAsWarning = false)
     {
         if (feedbackText != null)
             feedbackText.text = message;
 
-        Debug.LogWarning(message);
+        if (logAsWarning)
+            Debug.LogWarning(message);
+    }
+
+    private void UpdateActionButtons()
+    {
+        bool isWinningSlotValid = IsSlotValid(winningSlotInput.text.Trim());
+        bool isStraightBetSlotValid = IsSlotValid(straightBetSlotInput.text.Trim());
+        bool hasActiveBets = gameFlowController.GameState.ActiveBets.Count > 0;
+        bool isBettingState = gameFlowController.GameState.FlowState == GameFlowState.Betting;
+
+        spinButton.interactable = isWinningSlotValid && hasActiveBets && isBettingState;
+        addStraightButton.interactable = isStraightBetSlotValid && isBettingState;
+        clearBetsButton.interactable = hasActiveBets && isBettingState;
+    }
+
+    private bool ValidateInputs(bool showFeedback)
+    {
+        string resultSlotId = winningSlotInput.text.Trim();
+        string straightSlotId = straightBetSlotInput.text.Trim();
+
+        if (!IsSlotValid(resultSlotId))
+        {
+            if (showFeedback)
+                ShowFeedback($"Result slot '{resultSlotId}' is not valid for {gameFlowController.GameState.WheelType} roulette.", true);
+
+            return false;
+        }
+
+        if (!IsSlotValid(straightSlotId))
+        {
+            if (showFeedback)
+                ShowFeedback($"Straight bet slot '{straightSlotId}' is not valid for {gameFlowController.GameState.WheelType} roulette.", true);
+
+            return false;
+        }
+
+        if (showFeedback)
+            ShowFeedback(string.Empty);
+
+        return true;
+    }
+
+    private bool IsSlotValid(string slotId)
+    {
+        if (string.IsNullOrWhiteSpace(slotId))
+            return false;
+
+        return RouletteWheelData.GetSlotById(slotId.Trim(), gameFlowController.GameState.WheelType) != null;
     }
 }
