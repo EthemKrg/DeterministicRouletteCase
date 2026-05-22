@@ -14,7 +14,7 @@ public class RouletteGameState
     private readonly List<RouletteBet> activeBets = new List<RouletteBet>();
 
     public RouletteWheelType WheelType { get; private set; } = RouletteWheelType.European;
-    public int CurrentChips { get; private set; } = 1000;
+    public int StartingChips { get; private set; } = 1000;
     public IReadOnlyList<RouletteBet> ActiveBets => activeBets;
 
     public int MinBet { get; private set; } = 10;
@@ -70,7 +70,7 @@ public class RouletteGameState
             return false;
         }
 
-        if (CurrentChips < stake)
+        if (StartingChips < stake)
         {
             reason = "Not enough chips.";
             return false;
@@ -91,7 +91,7 @@ public class RouletteGameState
             throw new System.InvalidOperationException(reason);
 
         activeBets.Add(bet);
-        CurrentChips -= bet.Stake;
+        StartingChips -= bet.Stake;
     }
 
     public void ApplyRoundResult(RoundResult roundResult)
@@ -99,7 +99,7 @@ public class RouletteGameState
         if (roundResult == null)
             throw new System.ArgumentNullException(nameof(roundResult));
 
-        CurrentChips += roundResult.TotalReturn;
+        StartingChips += roundResult.TotalReturn;
         activeBets.Clear();
     }
 
@@ -110,7 +110,7 @@ public class RouletteGameState
 
         foreach (RouletteBet bet in activeBets)
         {
-            CurrentChips += bet.Stake;
+            StartingChips += bet.Stake;
         }
 
         activeBets.Clear();
