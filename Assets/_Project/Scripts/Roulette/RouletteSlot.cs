@@ -3,10 +3,11 @@ using System;
 [Serializable]
 public class RouletteSlot
 {
-    public string Id { get; private set; } // should be string to cover for american roulette too, -> requires 00
-    public int Number { get; private set; } // for calculation of -> even, odd, low, high, dozen, column
+    // String id is used because American roulette has "00".
+    public string Id { get; private set; }
+    public int Number { get; private set; }
     public RouletteColor Color { get; private set; }
-    public bool IsDoubleZero { get; private set; } // 0 and 00 makes lose other outside bets
+    public bool IsDoubleZero { get; private set; }
 
     public RouletteSlot(string id, int number, RouletteColor color, bool isDoubleZero = false)
     {
