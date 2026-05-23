@@ -33,47 +33,67 @@ public class GameFlowController : MonoBehaviour
 
     public void PlaceStraightBet(string slotId, int stake)
     {
-        PlaceBet(BetType.Straight, stake, new[] { slotId });
+        PlaceBet(RouletteBetFactory.CreateStraight(slotId, stake, GameState.WheelType));
     }
 
     public void PlaceRedBet(int stake)
     {
-        PlaceBet(BetType.Red, stake, RouletteWheelData.GetRedSlots(GameState.WheelType).Select(slot => slot.Id));
+        PlaceBet(RouletteBetFactory.CreateRed(stake, GameState.WheelType));
+    }
+
+    public void PlaceSplitBet(int firstNumber, int secondNumber, int stake)
+    {
+        PlaceBet(RouletteBetFactory.CreateSplit(firstNumber, secondNumber, stake));
+    }
+
+    public void PlaceStreetBet(int startNumber, int stake)
+    {
+        PlaceBet(RouletteBetFactory.CreateStreet(startNumber, stake));
+    }
+
+    public void PlaceCornerBet(int bottomLeftNumber, int stake)
+    {
+        PlaceBet(RouletteBetFactory.CreateCorner(bottomLeftNumber, stake));
+    }
+
+    public void PlaceSixLineBet(int bottomStartNumber, int stake)
+    {
+        PlaceBet(RouletteBetFactory.CreateSixLine(bottomStartNumber, stake));
     }
 
     public void PlaceBlackBet(int stake)
     {
-        PlaceBet(BetType.Black, stake, RouletteWheelData.GetBlackSlots(GameState.WheelType).Select(slot => slot.Id));
+        PlaceBet(RouletteBetFactory.CreateBlack(stake, GameState.WheelType));
     }
 
     public void PlaceEvenBet(int stake)
     {
-        PlaceBet(BetType.Even, stake, RouletteWheelData.GetEvenSlots(GameState.WheelType).Select(slot => slot.Id));
+        PlaceBet(RouletteBetFactory.CreateEven(stake, GameState.WheelType));
     }
 
     public void PlaceOddBet(int stake)
     {
-        PlaceBet(BetType.Odd, stake, RouletteWheelData.GetOddSlots(GameState.WheelType).Select(slot => slot.Id));
+        PlaceBet(RouletteBetFactory.CreateBlack(stake, GameState.WheelType));
     }
 
     public void PlaceLowBet(int stake)
     {
-        PlaceBet(BetType.Low, stake, RouletteWheelData.GetLowSlots(GameState.WheelType).Select(slot => slot.Id));
+        PlaceBet(RouletteBetFactory.CreateLow(stake, GameState.WheelType));
     }
 
     public void PlaceHighBet(int stake)
     {
-        PlaceBet(BetType.High, stake, RouletteWheelData.GetHighSlots(GameState.WheelType).Select(slot => slot.Id));
+        PlaceBet(RouletteBetFactory.CreateHigh(stake, GameState.WheelType));
     }
 
     public void PlaceDozenBet(int dozenIndex, int stake)
     {
-        PlaceBet(BetType.Dozen, stake, RouletteWheelData.GetDozenSlots(dozenIndex, GameState.WheelType).Select(slot => slot.Id));
+        PlaceBet(RouletteBetFactory.CreateDozen(dozenIndex, stake, GameState.WheelType));
     }
 
     public void PlaceColumnBet(int columnIndex, int stake)
     {
-        PlaceBet(BetType.Column, stake, RouletteWheelData.GetColumnSlots(columnIndex, GameState.WheelType).Select(slot => slot.Id));
+        PlaceBet(RouletteBetFactory.CreateColumn(columnIndex, stake, GameState.WheelType));
     }
 
     public void Spin(string winningSlotId)
@@ -112,11 +132,9 @@ public class GameFlowController : MonoBehaviour
         NotifyStateChanged();
     }
 
-    private void PlaceBet(BetType betType, int stake, IEnumerable<string> coveredSlotIds)
+    private void PlaceBet(RouletteBet bet)
     {
-        RouletteBet bet = new RouletteBet(betType, stake, coveredSlotIds);
         GameState.PlaceBet(bet);
-
         NotifyStateChanged();
     }
 
