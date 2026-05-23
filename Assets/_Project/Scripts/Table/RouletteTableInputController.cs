@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -7,10 +8,13 @@ public class RouletteTableInputController : MonoBehaviour
     [SerializeField] private Camera rayCamera;
     [SerializeField] private GameFlowController gameFlowController;
     [SerializeField] private ChipSelectionController chipSelectionController;
+    [SerializeField] private RouletteTableHighlightController highlightController;
 
     [Header("Raycast")]
     [SerializeField] private LayerMask betAreaLayerMask = ~0;
     [SerializeField] private float rayDistance = 100f;
+
+    private RouletteBetArea hoveredBetArea;
 
     private void Awake()
     {
@@ -19,6 +23,8 @@ public class RouletteTableInputController : MonoBehaviour
 
     private void Update()
     {
+        UpdateHover();
+
         if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
         {
             TryHandlePointerPress(Mouse.current.position.ReadValue());
@@ -33,12 +39,7 @@ public class RouletteTableInputController : MonoBehaviour
 
     private void TryHandlePointerPress(Vector2 screenPosition)
     {
-        Ray ray = rayCamera.ScreenPointToRay(screenPosition);
-
-        if (!Physics.Raycast(ray, out RaycastHit hit, rayDistance, betAreaLayerMask))
-            return;
-
-        RouletteBetArea betArea = hit.collider.GetComponentInParent<RouletteBetArea>();
+        RouletteBetArea betArea = GetBetAreaAtScreenPosition(screenPosition);
 
         if (betArea == null)
             return;
@@ -76,5 +77,40 @@ public class RouletteTableInputController : MonoBehaviour
 
         if (chipSelectionController == null)
             throw new System.InvalidOperationException($"{nameof(RouletteTableInputController)} needs a ChipSelectionController reference.");
+
+        if (highlightController == null)
+            throw new System.InvalidOperationException($"{nameof(RouletteTableInputController)} needs a RouletteTableHighlightController reference.");
+    }
+
+    private void UpdateHover()
+    {
+        if (Mouse.current == null || highlightController == null)
+            return;
+
+        RouletteBetArea betArea = GetBetAreaAtScreenPosition(Mouse.current.position.ReadValue());
+
+        if (betArea == hoveredBetArea)
+            return;
+
+        hoveredBetArea = betArea;
+
+        if (hoveredBetArea == null)
+        {
+            highlightController.ClearHighlight();
+            return;
+        }
+
+        IReadOnlyList<string> previewSlotIds = hoveredBetArea.GetPreviewSlotIds(gameFlowController.GameState.WheelType);
+        highlightController.HighlightSlots(previewSlotIds);
+    }
+
+    private RouletteBetArea GetBetAreaAtScreenPosition(Vector2 screenPosition)
+    {
+        Ray ray = rayCamera.ScreenPointToRay(screenPosition);
+
+        if (!Physics.Raycast(ray, out RaycastHit hit, rayDistance, betAreaLayerMask))
+            return null;
+
+        return hit.collider.GetComponentInParent<RouletteBetArea>();
     }
 }
