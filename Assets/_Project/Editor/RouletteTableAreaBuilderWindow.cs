@@ -437,6 +437,21 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
         serializedObject.ApplyModifiedProperties();
 
         SetStraightAreaMaterial(instance, slotId);
+        SetNumberArea(instance, slotId);
+    }
+
+    private static void SetNumberArea(GameObject instance, string slotId)
+    {
+        RouletteNumberArea numberArea = instance.GetComponent<RouletteNumberArea>();
+
+        if (numberArea == null)
+            numberArea = instance.AddComponent<RouletteNumberArea>();
+
+        SerializedObject serializedObject = new SerializedObject(numberArea);
+        serializedObject.FindProperty("slotId").stringValue = slotId;
+        serializedObject.ApplyModifiedProperties();
+
+        EditorUtility.SetDirty(numberArea);
     }
 
     private GameObject CreateArea(
