@@ -127,10 +127,10 @@ public static class RouletteWheelData
     }
 
     // columnIndex: 1 for 1,4,7,...,34; 2 for 2,5,8,...,35; 3 for 3,6,9,...,36
-    public static IReadOnlyList<RouletteSlot> GetColumnSlots(int dozenIndex, RouletteWheelType wheelType = RouletteWheelType.European)
+    public static IReadOnlyList<RouletteSlot> GetColumnSlots(int columnIndex, RouletteWheelType wheelType = RouletteWheelType.European)
     {
         return GetSlots(wheelType)
-            .Where(slot => slot.GetColumnIndex() == dozenIndex)
+            .Where(slot => slot.GetColumnIndex() == columnIndex)
             .ToList();
     }
 
