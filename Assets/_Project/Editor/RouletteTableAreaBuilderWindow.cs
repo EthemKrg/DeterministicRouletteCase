@@ -10,40 +10,11 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
     private Vector2 cellSize = new Vector2(1.2f, 1.2f);
     private Vector3 areaScale = new Vector3(1f, 0.01f, 1f);
 
-    private int betAreaLayer;
-
     [SerializeField] private Material redMaterial;
     [SerializeField] private Material blackMaterial;
     [SerializeField] private Material greenMaterial;
 
-    private static bool IsRedNumber(int number)
-    {
-        switch (number)
-        {
-            case 1:
-            case 3:
-            case 5:
-            case 7:
-            case 9:
-            case 12:
-            case 14:
-            case 16:
-            case 18:
-            case 19:
-            case 21:
-            case 23:
-            case 25:
-            case 27:
-            case 30:
-            case 32:
-            case 34:
-            case 36:
-                return true;
-
-            default:
-                return false;
-        }
-    }
+    private int betAreaLayer;
 
     [MenuItem("Tools/Roulette/Table Area Builder")]
     private static void Open()
@@ -83,38 +54,34 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
 
         if (GUILayout.Button("Generate Straight Areas 0-36"))
             GenerateStraightAreas();
+
+        if (GUILayout.Button("Generate Outside Areas"))
+            GenerateOutsideAreas();
     }
 
     private void GenerateStraightAreas()
     {
-        if (parent == null)
-        {
-            Debug.LogWarning("Parent is missing.");
+        if (!CanGenerate())
             return;
-        }
-
-        if (betAreaPrefab == null)
-        {
-            Debug.LogWarning("Bet area prefab is missing.");
-            return;
-        }
 
         Transform root = GetOrCreateChild(parent, "Straight");
-
         ClearChildren(root);
 
-        CreateStraightArea(root, "0", 0, new Vector3(startPosition.x - cellSize.x, startPosition.y, startPosition.z + cellSize.y));
+        CreateStraightArea(
+            root,
+            "0",
+            0,
+            new Vector3(startPosition.x - cellSize.x, startPosition.y, startPosition.z + cellSize.y));
 
         for (int number = 1; number <= 36; number++)
         {
-            int row = (number - 1) % 3;
-            int column = (number - 1) / 3;
+            int row = (number - 1) % RouletteTableLayout.RowCount;
+            int column = (number - 1) / RouletteTableLayout.RowCount;
 
             Vector3 position = new Vector3(
                 startPosition.x + column * cellSize.x,
                 startPosition.y,
-                startPosition.z + row * cellSize.y
-            );
+                startPosition.z + row * cellSize.y);
 
             CreateStraightArea(root, number.ToString(), number, position);
         }
@@ -122,14 +89,196 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
         Debug.Log("Generated straight bet areas 0-36.");
     }
 
+    private void GenerateOutsideAreas()
+    {
+        if (!CanGenerate())
+            return;
+
+        Transform outsideRoot = GetOrCreateChild(parent, "Outside");
+        Transform dozenRoot = GetOrCreateChild(parent, "Dozens");
+        Transform columnRoot = GetOrCreateChild(parent, "Columns");
+
+        ClearChildren(outsideRoot);
+        ClearChildren(dozenRoot);
+        ClearChildren(columnRoot);
+
+        float tableWidth = cellSize.x * RouletteTableLayout.ColumnCount;
+        float centerX = startPosition.x + tableWidth * 0.5f - cellSize.x * 0.5f;
+
+        float dozenZ = startPosition.z - cellSize.y * 1.15f;
+        float outsideZ = startPosition.z - cellSize.y * 2.15f;
+        float columnX = startPosition.x + cellSize.x * 12.15f;
+
+        Vector3 dozenScale = new Vector3(cellSize.x * 3.8f, areaScale.y, areaScale.z);
+        Vector3 outsideScale = new Vector3(cellSize.x * 1.8f, areaScale.y, areaScale.z);
+        Vector3 columnScale = new Vector3(areaScale.x, areaScale.y, areaScale.z);
+
+        CreateArea(
+            dozenRoot,
+            "BetArea_Dozen_1",
+            BetType.Dozen,
+            "1st 12",
+            new Vector3(startPosition.x + cellSize.x * 1.5f, startPosition.y, dozenZ),
+            dozenScale,
+            index: 1);
+
+        CreateArea(
+            dozenRoot,
+            "BetArea_Dozen_2",
+            BetType.Dozen,
+            "2nd 12",
+            new Vector3(startPosition.x + cellSize.x * 5.5f, startPosition.y, dozenZ),
+            dozenScale,
+            index: 2);
+
+        CreateArea(
+            dozenRoot,
+            "BetArea_Dozen_3",
+            BetType.Dozen,
+            "3rd 12",
+            new Vector3(startPosition.x + cellSize.x * 9.5f, startPosition.y, dozenZ),
+            dozenScale,
+            index: 3);
+
+        CreateArea(
+            outsideRoot,
+            "BetArea_Low",
+            BetType.Low,
+            "1-18",
+            new Vector3(centerX - cellSize.x * 5f, startPosition.y, outsideZ),
+            outsideScale);
+
+        CreateArea(
+            outsideRoot,
+            "BetArea_Even",
+            BetType.Even,
+            "Even",
+            new Vector3(centerX - cellSize.x * 3f, startPosition.y, outsideZ),
+            outsideScale);
+
+        GameObject redArea = CreateArea(
+            outsideRoot,
+            "BetArea_Red",
+            BetType.Red,
+            "Red",
+            new Vector3(centerX - cellSize.x, startPosition.y, outsideZ),
+            outsideScale);
+
+        SetAreaMaterial(redArea, redMaterial);
+
+        GameObject blackArea = CreateArea(
+            outsideRoot,
+            "BetArea_Black",
+            BetType.Black,
+            "Black",
+            new Vector3(centerX + cellSize.x, startPosition.y, outsideZ),
+            outsideScale);
+
+        SetAreaMaterial(blackArea, blackMaterial);
+
+        CreateArea(
+            outsideRoot,
+            "BetArea_Odd",
+            BetType.Odd,
+            "Odd",
+            new Vector3(centerX + cellSize.x * 3f, startPosition.y, outsideZ),
+            outsideScale);
+
+        CreateArea(
+            outsideRoot,
+            "BetArea_High",
+            BetType.High,
+            "19-36",
+            new Vector3(centerX + cellSize.x * 5f, startPosition.y, outsideZ),
+            outsideScale);
+
+        CreateArea(
+            columnRoot,
+            "BetArea_Column_1",
+            BetType.Column,
+            "2:1",
+            new Vector3(columnX, startPosition.y, startPosition.z),
+            columnScale,
+            index: 1);
+
+        CreateArea(
+            columnRoot,
+            "BetArea_Column_2",
+            BetType.Column,
+            "2:1",
+            new Vector3(columnX, startPosition.y, startPosition.z + cellSize.y),
+            columnScale,
+            index: 2);
+
+        CreateArea(
+            columnRoot,
+            "BetArea_Column_3",
+            BetType.Column,
+            "2:1",
+            new Vector3(columnX, startPosition.y, startPosition.z + cellSize.y * 2f),
+            columnScale,
+            index: 3);
+
+        Debug.Log("Generated outside bet areas.");
+    }
+
+    private bool CanGenerate()
+    {
+        if (parent == null)
+        {
+            Debug.LogWarning("Parent is missing.");
+            return false;
+        }
+
+        if (betAreaPrefab == null)
+        {
+            Debug.LogWarning("Bet area prefab is missing.");
+            return false;
+        }
+
+        return true;
+    }
+
     private void CreateStraightArea(Transform root, string slotId, int primaryNumber, Vector3 position)
+    {
+        GameObject instance = CreateArea(
+            root,
+            $"BetArea_Straight_{slotId}",
+            BetType.Straight,
+            slotId,
+            position,
+            areaScale,
+            primaryNumber);
+
+        RouletteBetArea betArea = instance.GetComponent<RouletteBetArea>();
+
+        if (betArea == null)
+            return;
+
+        SerializedObject serializedObject = new SerializedObject(betArea);
+        serializedObject.FindProperty("straightSlotId").stringValue = slotId;
+        serializedObject.ApplyModifiedProperties();
+
+        SetStraightAreaMaterial(instance, slotId);
+    }
+
+    private GameObject CreateArea(
+        Transform root,
+        string objectName,
+        BetType betType,
+        string label,
+        Vector3 localPosition,
+        Vector3 localScale,
+        int primaryNumber = 0,
+        int secondaryNumber = 0,
+        int index = 0)
     {
         GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(betAreaPrefab, root);
 
-        instance.name = $"BetArea_Straight_{slotId}";
-        instance.transform.localPosition = position;
+        instance.name = objectName;
+        instance.transform.localPosition = localPosition;
         instance.transform.localRotation = Quaternion.identity;
-        instance.transform.localScale = areaScale;
+        instance.transform.localScale = localScale;
         instance.layer = betAreaLayer;
 
         RouletteBetArea betArea = instance.GetComponent<RouletteBetArea>();
@@ -137,22 +286,78 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
         if (betArea == null)
         {
             Debug.LogWarning($"{instance.name} has no RouletteBetArea component.");
-            return;
+            return instance;
         }
 
         SerializedObject serializedObject = new SerializedObject(betArea);
 
-        serializedObject.FindProperty("betType").enumValueIndex = (int)BetType.Straight;
+        serializedObject.FindProperty("betType").enumValueIndex = (int)betType;
         serializedObject.FindProperty("primaryNumber").intValue = primaryNumber;
-        serializedObject.FindProperty("secondaryNumber").intValue = 0;
-        serializedObject.FindProperty("index").intValue = 0;
-        serializedObject.FindProperty("straightSlotId").stringValue = slotId;
+        serializedObject.FindProperty("secondaryNumber").intValue = secondaryNumber;
+        serializedObject.FindProperty("index").intValue = index;
 
-        SetLabel(instance, slotId);
-        SetStraightAreaMaterial(instance, slotId);
+        SerializedProperty straightSlotIdProperty = serializedObject.FindProperty("straightSlotId");
+
+        if (straightSlotIdProperty != null)
+            straightSlotIdProperty.stringValue = string.Empty;
 
         serializedObject.ApplyModifiedProperties();
         EditorUtility.SetDirty(betArea);
+
+        SetLabel(instance, label);
+
+        return instance;
+    }
+
+    private void SetStraightAreaMaterial(GameObject instance, string slotId)
+    {
+        SetAreaMaterial(instance, GetMaterialForSlot(slotId));
+    }
+
+    private Material GetMaterialForSlot(string slotId)
+    {
+        RouletteSlot slot = RouletteWheelData.GetSlotById(slotId, RouletteWheelType.European);
+
+        if (slot == null)
+            return null;
+
+        switch (slot.Color)
+        {
+            case RouletteColor.Green:
+                return greenMaterial;
+
+            case RouletteColor.Red:
+                return redMaterial;
+
+            case RouletteColor.Black:
+                return blackMaterial;
+
+            default:
+                return null;
+        }
+    }
+
+    private static void SetAreaMaterial(GameObject instance, Material material)
+    {
+        if (material == null)
+            return;
+
+        Renderer renderer = instance.GetComponentInChildren<Renderer>();
+
+        if (renderer == null)
+            return;
+
+        renderer.sharedMaterial = material;
+    }
+
+    private static void SetLabel(GameObject instance, string text)
+    {
+        TMPro.TextMeshPro label = instance.GetComponentInChildren<TMPro.TextMeshPro>();
+
+        if (label == null)
+            return;
+
+        label.text = text;
     }
 
     private static Transform GetOrCreateChild(Transform parent, string childName)
@@ -172,39 +377,5 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
     {
         for (int i = root.childCount - 1; i >= 0; i--)
             DestroyImmediate(root.GetChild(i).gameObject);
-    }
-
-    private static void SetLabel(GameObject instance, string text)
-    {
-        TMPro.TextMeshPro label = instance.GetComponentInChildren<TMPro.TextMeshPro>();
-
-        if (label == null)
-            return;
-
-        label.text = text;
-    }
-
-    private void SetStraightAreaMaterial(GameObject instance, string slotId)
-    {
-        Renderer renderer = instance.GetComponentInChildren<Renderer>();
-
-        if (renderer == null)
-            return;
-
-        Material material = GetMaterialForSlot(slotId);
-
-        if (material != null)
-            renderer.sharedMaterial = material;
-    }
-
-    private Material GetMaterialForSlot(string slotId)
-    {
-        if (slotId == "0" || slotId == "00")
-            return greenMaterial;
-
-        if (!int.TryParse(slotId, out int number))
-            return null;
-
-        return IsRedNumber(number) ? redMaterial : blackMaterial;
     }
 }
