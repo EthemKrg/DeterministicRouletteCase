@@ -65,6 +65,9 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
 
         if (GUILayout.Button("Generate Split Areas"))
             GenerateSplitAreas();
+
+        if (GUILayout.Button("Generate Corner Areas"))
+            GenerateCornerAreas();
     }
 
     private void GenerateStraightAreas()
@@ -304,6 +307,42 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
         GenerateVerticalSplits(splitRoot, verticalSplitScale, splitY);
 
         Debug.Log("Generated split bet areas.");
+    }
+
+    private void GenerateCornerAreas()
+    {
+        if (!CanGenerate())
+            return;
+
+        Transform cornerRoot = GetOrCreateChild(parent, "Corner");
+        ClearChildren(cornerRoot);
+
+        Vector3 cornerScale = new Vector3(cellSize.x * 0.22f, areaScale.y, cellSize.y * 0.22f);
+        float cornerY = startPosition.y + 0.03f;
+
+        for (int column = 0; column < RouletteTableLayout.ColumnCount - 1; column++)
+        {
+            for (int row = 0; row < RouletteTableLayout.RowCount - 1; row++)
+            {
+                int bottomLeftNumber = RouletteTableLayout.GetNumberAt(row, column);
+
+                Vector3 position = new Vector3(
+                    startPosition.x + (column + 0.5f) * cellSize.x,
+                    cornerY,
+                    startPosition.z + (row + 0.5f) * cellSize.y);
+
+                CreateArea(
+                    cornerRoot,
+                    $"BetArea_Corner_{bottomLeftNumber}",
+                    BetType.Corner,
+                    string.Empty,
+                    position,
+                    cornerScale,
+                    primaryNumber: bottomLeftNumber);
+            }
+        }
+
+        Debug.Log("Generated corner bet areas.");
     }
 
     private void GenerateHorizontalSplits(Transform splitRoot, Vector3 splitScale, float splitY)
