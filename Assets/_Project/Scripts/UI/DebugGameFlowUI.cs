@@ -226,7 +226,7 @@ public class DebugGameFlowUI : MonoBehaviour
 
         StringBuilder builder = new StringBuilder();
         builder.AppendLine($"Wheel: {state.WheelType}");
-        builder.AppendLine($"Chips: {state.StartingChips}");
+        builder.AppendLine($"Chips: {state.CurrentChips}");
         builder.AppendLine($"Active Bets: {state.ActiveBets.Count}");
         builder.AppendLine();
         builder.AppendLine($"Spins: {stats.TotalSpins}");
