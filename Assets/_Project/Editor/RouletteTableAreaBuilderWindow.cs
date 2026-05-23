@@ -10,6 +10,7 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
     private Vector2 cellSize = new Vector2(1.2f, 1.2f);
     private Vector3 areaScale = new Vector3(1f, 0.01f, 1f);
 
+    [SerializeField] private Material defaultMaterial;
     [SerializeField] private Material redMaterial;
     [SerializeField] private Material blackMaterial;
     [SerializeField] private Material greenMaterial;
@@ -40,6 +41,7 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
 
         EditorGUILayout.Space();
 
+        defaultMaterial = (Material)EditorGUILayout.ObjectField("Default Material", defaultMaterial, typeof(Material), false);
         redMaterial = (Material)EditorGUILayout.ObjectField("Red Material", redMaterial, typeof(Material), false);
         blackMaterial = (Material)EditorGUILayout.ObjectField("Black Material", blackMaterial, typeof(Material), false);
         greenMaterial = (Material)EditorGUILayout.ObjectField("Green Material", greenMaterial, typeof(Material), false);
@@ -57,6 +59,9 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
 
         if (GUILayout.Button("Generate Outside Areas"))
             GenerateOutsideAreas();
+
+        if (GUILayout.Button("Generate Street and Six Line Areas"))
+            GenerateStreetAndSixLineAreas();
     }
 
     private void GenerateStraightAreas()
@@ -222,6 +227,63 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
         Debug.Log("Generated outside bet areas.");
     }
 
+    private void GenerateStreetAndSixLineAreas()
+    {
+        if (!CanGenerate())
+            return;
+
+        Transform streetRoot = GetOrCreateChild(parent, "Street");
+        Transform sixLineRoot = GetOrCreateChild(parent, "SixLine");
+
+        ClearChildren(streetRoot);
+        ClearChildren(sixLineRoot);
+
+        float lineZ = startPosition.z - cellSize.y * 0.55f;
+
+        Vector3 streetScale = new Vector3(cellSize.x * 0.65f, areaScale.y, cellSize.y * 0.22f);
+        Vector3 sixLineScale = new Vector3(cellSize.x * 0.25f, areaScale.y, cellSize.y * 0.22f);
+
+        for (int column = 0; column < RouletteTableLayout.ColumnCount; column++)
+        {
+            int startNumber = RouletteTableLayout.GetNumberAt(0, column);
+
+            Vector3 position = new Vector3(
+                startPosition.x + column * cellSize.x,
+                startPosition.y,
+                lineZ);
+
+            CreateArea(
+                streetRoot,
+                $"BetArea_Street_{startNumber}",
+                BetType.Street,
+                GetStreetLabel(startNumber),
+                position,
+                streetScale,
+                primaryNumber: startNumber);
+        }
+
+        for (int column = 0; column < RouletteTableLayout.ColumnCount - 1; column++)
+        {
+            int startNumber = RouletteTableLayout.GetNumberAt(0, column);
+
+            Vector3 position = new Vector3(
+                startPosition.x + (column + 0.5f) * cellSize.x,
+                startPosition.y,
+                lineZ);
+
+            CreateArea(
+                sixLineRoot,
+                $"BetArea_SixLine_{startNumber}",
+                BetType.SixLine,
+                GetSixLineLabel(startNumber),
+                position,
+                sixLineScale,
+                primaryNumber: startNumber);
+        }
+
+        Debug.Log("Generated street and six line bet areas.");
+    }
+
     private bool CanGenerate()
     {
         if (parent == null)
@@ -305,6 +367,7 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
         EditorUtility.SetDirty(betArea);
 
         SetLabel(instance, label);
+        SetAreaMaterial(instance, defaultMaterial);
 
         return instance;
     }
@@ -358,6 +421,16 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
             return;
 
         label.text = text;
+    }
+
+    private static string GetStreetLabel(int startNumber)
+    {
+        return $"{startNumber}-{startNumber + 2}";
+    }
+
+    private static string GetSixLineLabel(int startNumber)
+    {
+        return $"{startNumber}-{startNumber + 5}";
     }
 
     private static Transform GetOrCreateChild(Transform parent, string childName)
