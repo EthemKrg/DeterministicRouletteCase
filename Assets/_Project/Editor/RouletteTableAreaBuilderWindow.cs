@@ -6,11 +6,44 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
     private Transform parent;
     private GameObject betAreaPrefab;
 
-    private Vector3 startPosition = new Vector3(-2.75f, 0.15f, -1.2f);
-    private Vector2 cellSize = new Vector2(0.45f, 0.45f);
-    private Vector3 areaScale = new Vector3(0.42f, 0.05f, 0.42f);
+    private Vector3 startPosition = new Vector3(-7f, 0.1f, -1.2f);
+    private Vector2 cellSize = new Vector2(1.2f, 1.2f);
+    private Vector3 areaScale = new Vector3(1f, 0.01f, 1f);
 
     private int betAreaLayer;
+
+    [SerializeField] private Material redMaterial;
+    [SerializeField] private Material blackMaterial;
+    [SerializeField] private Material greenMaterial;
+
+    private static bool IsRedNumber(int number)
+    {
+        switch (number)
+        {
+            case 1:
+            case 3:
+            case 5:
+            case 7:
+            case 9:
+            case 12:
+            case 14:
+            case 16:
+            case 18:
+            case 19:
+            case 21:
+            case 23:
+            case 25:
+            case 27:
+            case 30:
+            case 32:
+            case 34:
+            case 36:
+                return true;
+
+            default:
+                return false;
+        }
+    }
 
     [MenuItem("Tools/Roulette/Table Area Builder")]
     private static void Open()
@@ -33,6 +66,12 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
         startPosition = EditorGUILayout.Vector3Field("Start Position", startPosition);
         cellSize = EditorGUILayout.Vector2Field("Cell Size", cellSize);
         areaScale = EditorGUILayout.Vector3Field("Area Scale", areaScale);
+
+        EditorGUILayout.Space();
+
+        redMaterial = (Material)EditorGUILayout.ObjectField("Red Material", redMaterial, typeof(Material), false);
+        blackMaterial = (Material)EditorGUILayout.ObjectField("Black Material", blackMaterial, typeof(Material), false);
+        greenMaterial = (Material)EditorGUILayout.ObjectField("Green Material", greenMaterial, typeof(Material), false);
 
         EditorGUILayout.Space();
 
@@ -109,6 +148,9 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
         serializedObject.FindProperty("index").intValue = 0;
         serializedObject.FindProperty("straightSlotId").stringValue = slotId;
 
+        SetLabel(instance, slotId);
+        SetStraightAreaMaterial(instance, slotId);
+
         serializedObject.ApplyModifiedProperties();
         EditorUtility.SetDirty(betArea);
     }
@@ -130,5 +172,39 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
     {
         for (int i = root.childCount - 1; i >= 0; i--)
             DestroyImmediate(root.GetChild(i).gameObject);
+    }
+
+    private static void SetLabel(GameObject instance, string text)
+    {
+        TMPro.TextMeshPro label = instance.GetComponentInChildren<TMPro.TextMeshPro>();
+
+        if (label == null)
+            return;
+
+        label.text = text;
+    }
+
+    private void SetStraightAreaMaterial(GameObject instance, string slotId)
+    {
+        Renderer renderer = instance.GetComponentInChildren<Renderer>();
+
+        if (renderer == null)
+            return;
+
+        Material material = GetMaterialForSlot(slotId);
+
+        if (material != null)
+            renderer.sharedMaterial = material;
+    }
+
+    private Material GetMaterialForSlot(string slotId)
+    {
+        if (slotId == "0" || slotId == "00")
+            return greenMaterial;
+
+        if (!int.TryParse(slotId, out int number))
+            return null;
+
+        return IsRedNumber(number) ? redMaterial : blackMaterial;
     }
 }
