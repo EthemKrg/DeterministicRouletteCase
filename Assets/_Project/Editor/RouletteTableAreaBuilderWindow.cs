@@ -3,12 +3,12 @@ using UnityEngine;
 
 public class RouletteTableAreaBuilderWindow : EditorWindow
 {
-    private Transform parent;
-    private GameObject betAreaPrefab;
+    [SerializeField] private Transform parent;
+    [SerializeField] private GameObject betAreaPrefab;
 
-    private Vector3 startPosition = new Vector3(-7f, 0.1f, -1.2f);
-    private Vector2 cellSize = new Vector2(1.2f, 1.2f);
-    private Vector3 areaScale = new Vector3(1f, 0.01f, 1f);
+    [SerializeField] private Vector3 startPosition = new Vector3(-7f, 0.1f, -1.2f);
+    [SerializeField] private Vector2 cellSize = new Vector2(1.2f, 1.2f);
+    [SerializeField] private Vector3 areaScale = new Vector3(1f, 0.01f, 1f);
 
     [SerializeField] private Material defaultMaterial;
     [SerializeField] private Material redMaterial;
@@ -62,6 +62,9 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
 
         if (GUILayout.Button("Generate Street and Six Line Areas"))
             GenerateStreetAndSixLineAreas();
+
+        if (GUILayout.Button("Generate Split Areas"))
+            GenerateSplitAreas();
     }
 
     private void GenerateStraightAreas()
@@ -282,6 +285,79 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
         }
 
         Debug.Log("Generated street and six line bet areas.");
+    }
+
+    private void GenerateSplitAreas()
+    {
+        if (!CanGenerate())
+            return;
+
+        Transform splitRoot = GetOrCreateChild(parent, "Split");
+        ClearChildren(splitRoot);
+
+        Vector3 horizontalSplitScale = new Vector3(cellSize.x * 0.16f, areaScale.y, cellSize.y * 0.65f);
+        Vector3 verticalSplitScale = new Vector3(cellSize.x * 0.65f, areaScale.y, cellSize.y * 0.16f);
+
+        float splitY = startPosition.y + 0.01f;
+
+        GenerateHorizontalSplits(splitRoot, horizontalSplitScale, splitY);
+        GenerateVerticalSplits(splitRoot, verticalSplitScale, splitY);
+
+        Debug.Log("Generated split bet areas.");
+    }
+
+    private void GenerateHorizontalSplits(Transform splitRoot, Vector3 splitScale, float splitY)
+    {
+        for (int column = 0; column < RouletteTableLayout.ColumnCount - 1; column++)
+        {
+            for (int row = 0; row < RouletteTableLayout.RowCount; row++)
+            {
+                int firstNumber = RouletteTableLayout.GetNumberAt(row, column);
+                int secondNumber = RouletteTableLayout.GetNumberAt(row, column + 1);
+
+                Vector3 position = new Vector3(
+                    startPosition.x + (column + 0.5f) * cellSize.x,
+                    splitY,
+                    startPosition.z + row * cellSize.y);
+
+                CreateArea(
+                    splitRoot,
+                    $"BetArea_Split_{firstNumber}_{secondNumber}",
+                    BetType.Split,
+                    $"{firstNumber}/{secondNumber}",
+                    position,
+                    splitScale,
+                    primaryNumber: firstNumber,
+                    secondaryNumber: secondNumber);
+            }
+        }
+    }
+
+    private void GenerateVerticalSplits(Transform splitRoot, Vector3 splitScale, float splitY)
+    {
+        for (int column = 0; column < RouletteTableLayout.ColumnCount; column++)
+        {
+            for (int row = 0; row < RouletteTableLayout.RowCount - 1; row++)
+            {
+                int firstNumber = RouletteTableLayout.GetNumberAt(row, column);
+                int secondNumber = RouletteTableLayout.GetNumberAt(row + 1, column);
+
+                Vector3 position = new Vector3(
+                    startPosition.x + column * cellSize.x,
+                    splitY,
+                    startPosition.z + (row + 0.5f) * cellSize.y);
+
+                CreateArea(
+                    splitRoot,
+                    $"BetArea_Split_{firstNumber}_{secondNumber}",
+                    BetType.Split,
+                    $"{firstNumber}/{secondNumber}",
+                    position,
+                    splitScale,
+                    primaryNumber: firstNumber,
+                    secondaryNumber: secondNumber);
+            }
+        }
     }
 
     private bool CanGenerate()
