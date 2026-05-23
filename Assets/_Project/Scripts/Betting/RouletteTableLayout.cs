@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 
+// Table numbers are mapped as 3 rows x 12 columns.
+// Used by inside bet validation and table area previews.
 public static class RouletteTableLayout
 {
     private const int MinNumber = 1;
@@ -33,7 +35,10 @@ public static class RouletteTableLayout
             return false;
         }
 
-        position = GetPosition(number);
+        int row = (number - 1) % RowCount;
+        int column = (number - 1) / RowCount;
+
+        position = new RouletteTablePosition(row, column);
         return true;
     }
 
@@ -93,9 +98,9 @@ public static class RouletteTableLayout
 
         slotIds = new[]
         {
-        firstNumber.ToString(),
-        secondNumber.ToString()
-    };
+            firstNumber.ToString(),
+            secondNumber.ToString()
+        };
 
         return true;
     }
@@ -129,10 +134,10 @@ public static class RouletteTableLayout
 
         slotIds = new[]
         {
-        first.ToString(),
-        second.ToString(),
-        third.ToString()
-    };
+            first.ToString(),
+            second.ToString(),
+            third.ToString()
+        };
 
         return true;
     }
@@ -172,11 +177,11 @@ public static class RouletteTableLayout
 
         slotIds = new[]
         {
-        bottomLeft.ToString(),
-        topLeft.ToString(),
-        bottomRight.ToString(),
-        topRight.ToString()
-    };
+            bottomLeft.ToString(),
+            topLeft.ToString(),
+            bottomRight.ToString(),
+            topRight.ToString()
+        };
 
         return true;
     }
@@ -222,13 +227,13 @@ public static class RouletteTableLayout
 
         slotIds = new[]
         {
-        first.ToString(),
-        second.ToString(),
-        third.ToString(),
-        fourth.ToString(),
-        fifth.ToString(),
-        sixth.ToString()
-    };
+            first.ToString(),
+            second.ToString(),
+            third.ToString(),
+            fourth.ToString(),
+            fifth.ToString(),
+            sixth.ToString()
+        };
 
         return true;
     }
