@@ -3,6 +3,8 @@ using System.Linq;
 
 public static class RouletteBetFactory
 {
+    // Table numbers are mapped as 3 rows x 12 columns.
+    // This is used for inside bet validation.
     public static RouletteBet CreateStraight(string slotId, int stake, RouletteWheelType wheelType)
     {
         RouletteSlot slot = RouletteWheelData.GetSlotById(slotId, wheelType);
@@ -15,14 +17,7 @@ public static class RouletteBetFactory
 
     public static RouletteBet CreateSplit(int firstNumber, int secondNumber, int stake)
     {
-        if (!RouletteTableLayout.AreAdjacentForSplit(firstNumber, secondNumber))
-            throw new ArgumentException($"Split bet requires adjacent numbers. Given: {firstNumber}, {secondNumber}");
-
-        return new RouletteBet(BetType.Split, stake, new[]
-        {
-            firstNumber.ToString(),
-            secondNumber.ToString()
-        });
+        return new RouletteBet(BetType.Split, stake, RouletteTableLayout.GetSplitSlotIds(firstNumber, secondNumber));
     }
 
     public static RouletteBet CreateStreet(int startNumber, int stake)
