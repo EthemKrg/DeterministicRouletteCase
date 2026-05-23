@@ -73,7 +73,7 @@ public class GameFlowController : MonoBehaviour
 
     public void PlaceOddBet(int stake)
     {
-        PlaceBet(RouletteBetFactory.CreateBlack(stake, GameState.WheelType));
+        PlaceBet(RouletteBetFactory.CreateOdd(stake, GameState.WheelType));
     }
 
     public void PlaceLowBet(int stake)
@@ -130,6 +130,11 @@ public class GameFlowController : MonoBehaviour
     {
         GameState.ClearBets();
         NotifyStateChanged();
+    }
+
+    public void PlacePreparedBet(RouletteBet bet)
+    {
+        PlaceBet(bet);
     }
 
     private void PlaceBet(RouletteBet bet)
