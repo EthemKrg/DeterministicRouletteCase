@@ -58,7 +58,7 @@ public class RouletteTableInputController : MonoBehaviour
 
             gameFlowController.PlacePreparedBet(bet);
 
-            Debug.Log($"Placed {bet.Type} bet. Stake: {bet.Stake}, Covers: {string.Join(",", bet.CoveredSlotIds)}");
+            //Debug.Log($"Placed bet: {bet.Type}, stake {bet.Stake}, covers {string.Join(", ", bet.CoveredSlotIds)}");
         }
         catch (System.Exception exception)
         {

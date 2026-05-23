@@ -84,6 +84,7 @@ public class DebugGameFlowUI : MonoBehaviour
 
     private void OnEnable()
     {
+        gameFlowController.OnFeedbackRequested += HandleFeedbackRequested;
         gameFlowController.OnGameStateChanged += Refresh;
         gameFlowController.OnRoundResolved += RefreshLastRound;
         Refresh();
@@ -91,6 +92,7 @@ public class DebugGameFlowUI : MonoBehaviour
 
     private void OnDisable()
     {
+        gameFlowController.OnFeedbackRequested -= HandleFeedbackRequested;
         gameFlowController.OnGameStateChanged -= Refresh;
         gameFlowController.OnRoundResolved -= RefreshLastRound;
     }
@@ -116,12 +118,16 @@ public class DebugGameFlowUI : MonoBehaviour
         }
     }
 
+    private void HandleFeedbackRequested(string message)
+    {
+        ShowFeedback(message);
+    }
+
     private void AddBet(Action placeBetAction)
     {
         try
         {
             placeBetAction?.Invoke();
-            ShowFeedback("Bet placed.");
             UpdateActionButtons();
         }
         catch (Exception exception)

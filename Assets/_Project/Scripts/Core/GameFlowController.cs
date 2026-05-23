@@ -130,6 +130,11 @@ public class GameFlowController : MonoBehaviour
         NotifyStateChanged();
     }
 
+    private void NotifyStateChanged()
+    {
+        OnGameStateChanged?.Invoke();
+    }
+
     public void PlacePreparedBet(RouletteBet bet)
     {
         PlaceBet(bet);
@@ -138,11 +143,75 @@ public class GameFlowController : MonoBehaviour
     private void PlaceBet(RouletteBet bet)
     {
         GameState.PlaceBet(bet);
+
+        OnFeedbackRequested?.Invoke(CreateBetPlacedMessage(bet));
+
         NotifyStateChanged();
     }
 
-    private void NotifyStateChanged()
+    private string CreateBetPlacedMessage(RouletteBet bet)
     {
-        OnGameStateChanged?.Invoke();
+        return $"Placed {bet.Stake} chips on {GetBetTargetText(bet)}.";
+    }
+
+    private string GetBetTargetText(RouletteBet bet)
+    {
+        switch (bet.Type)
+        {
+            case BetType.Straight:
+                return $"Straight {bet.CoveredSlotIds[0]}";
+
+            case BetType.Split:
+                return $"Split {bet.CoveredSlotIds[0]}/{bet.CoveredSlotIds[1]}";
+
+            case BetType.Street:
+                return $"Street ({string.Join(", ", bet.CoveredSlotIds)})";
+
+            case BetType.Corner:
+                return $"Corner ({string.Join(", ", bet.CoveredSlotIds)})";
+
+            case BetType.SixLine:
+                return $"Six Line ({string.Join(", ", bet.CoveredSlotIds)})";
+
+            case BetType.Red:
+            case BetType.Black:
+            case BetType.Even:
+            case BetType.Odd:
+            case BetType.Low:
+            case BetType.High:
+                return bet.Type.ToString();
+
+            case BetType.Dozen:
+                return $"Dozen ({GetRangeText(bet)})";
+
+            case BetType.Column:
+                return $"Column ({string.Join(", ", bet.CoveredSlotIds)})";
+
+            default:
+                return bet.Type.ToString();
+        }
+    }
+
+    private string GetRangeText(RouletteBet bet)
+    {
+        int min = int.MaxValue;
+        int max = int.MinValue;
+
+        foreach (string slotId in bet.CoveredSlotIds)
+        {
+            if (!int.TryParse(slotId, out int number))
+                continue;
+
+            if (number < min)
+                min = number;
+
+            if (number > max)
+                max = number;
+        }
+
+        if (min == int.MaxValue || max == int.MinValue)
+            return string.Join(", ", bet.CoveredSlotIds);
+
+        return $"{min}-{max}";
     }
 }
