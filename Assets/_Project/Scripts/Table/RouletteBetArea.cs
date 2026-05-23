@@ -5,6 +5,7 @@ using UnityEngine;
 public class RouletteBetArea : MonoBehaviour
 {
     [SerializeField] private BetType betType;
+    [SerializeField] private string straightSlotId;
     [SerializeField] private int primaryNumber;
     [SerializeField] private int secondaryNumber;
     [SerializeField] private int index;
@@ -16,7 +17,7 @@ public class RouletteBetArea : MonoBehaviour
         switch (betType)
         {
             case BetType.Straight:
-                return RouletteBetFactory.CreateStraight(primaryNumber.ToString(), stake, wheelType);
+                return RouletteBetFactory.CreateStraight(GetStraightSlotId(), stake, wheelType);
 
             case BetType.Split:
                 return RouletteBetFactory.CreateSplit(primaryNumber, secondaryNumber, stake);
@@ -63,5 +64,13 @@ public class RouletteBetArea : MonoBehaviour
     {
         RouletteBet previewBet = CreateBet(10, wheelType);
         return previewBet.CoveredSlotIds;
+    }
+
+    private string GetStraightSlotId()
+    {
+        if (!string.IsNullOrWhiteSpace(straightSlotId))
+            return straightSlotId.Trim();
+
+        return primaryNumber.ToString();
     }
 }
