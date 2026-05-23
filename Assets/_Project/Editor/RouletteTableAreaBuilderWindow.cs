@@ -207,7 +207,7 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
             columnRoot,
             "BetArea_Column_1",
             BetType.Column,
-            "2:1",
+            "Column 1",
             new Vector3(columnX, startPosition.y, startPosition.z),
             columnScale,
             index: 1);
@@ -216,7 +216,7 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
             columnRoot,
             "BetArea_Column_2",
             BetType.Column,
-            "2:1",
+            "Column 2",
             new Vector3(columnX, startPosition.y, startPosition.z + cellSize.y),
             columnScale,
             index: 2);
@@ -225,7 +225,7 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
             columnRoot,
             "BetArea_Column_3",
             BetType.Column,
-            "2:1",
+            "Column 3",
             new Vector3(columnX, startPosition.y, startPosition.z + cellSize.y * 2f),
             columnScale,
             index: 3);
