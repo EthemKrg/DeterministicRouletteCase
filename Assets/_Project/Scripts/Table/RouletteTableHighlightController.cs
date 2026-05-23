@@ -3,15 +3,39 @@ using UnityEngine;
 
 public class RouletteTableHighlightController : MonoBehaviour
 {
+    [Header("References")]
+    [SerializeField] private GameFlowController gameFlowController;
     [SerializeField] private Transform numberAreasRoot;
+
+    [Header("Hover")]
     [SerializeField] private Material highlightMaterial;
+
+    [Header("Winning Marker")]
+    [SerializeField] private GameObject winningMarkerPrefab;
+    [SerializeField] private Transform winningMarkerRoot;
+    [SerializeField] private Vector3 markerOffset = Vector3.zero;
 
     private readonly Dictionary<string, RouletteNumberArea> numberAreasBySlotId = new Dictionary<string, RouletteNumberArea>();
     private readonly List<RouletteNumberArea> highlightedAreas = new List<RouletteNumberArea>();
 
+    private GameObject winningMarkerInstance;
+
     private void Awake()
     {
         CacheNumberAreas();
+        CreateWinningMarker();
+    }
+
+    private void OnEnable()
+    {
+        if (gameFlowController != null)
+            gameFlowController.OnRoundResolved += HandleRoundResolved;
+    }
+
+    private void OnDisable()
+    {
+        if (gameFlowController != null)
+            gameFlowController.OnRoundResolved -= HandleRoundResolved;
     }
 
     public void HighlightSlots(IReadOnlyList<string> slotIds)
@@ -39,14 +63,51 @@ public class RouletteTableHighlightController : MonoBehaviour
         highlightedAreas.Clear();
     }
 
+    public void RefreshNumberAreas()
+    {
+        CacheNumberAreas();
+    }
+
+    public void ShowWinningMarker(string slotId)
+    {
+        if (string.IsNullOrWhiteSpace(slotId))
+            return;
+
+        if (!numberAreasBySlotId.TryGetValue(slotId, out RouletteNumberArea numberArea))
+            return;
+
+        if (winningMarkerInstance == null)
+            CreateWinningMarker();
+
+        Transform target = numberArea.transform;
+
+        var position = target.position + markerOffset;
+
+        winningMarkerInstance.transform.position = position;
+        winningMarkerInstance.transform.rotation = target.rotation;
+        winningMarkerInstance.SetActive(true);
+    }
+
+    public void HideWinningMarker()
+    {
+        if (winningMarkerInstance != null)
+            winningMarkerInstance.SetActive(false);
+    }
+
+    private void HandleRoundResolved(RoundResult result)
+    {
+        if (result == null || result.WinningSlot == null)
+            return;
+
+        ShowWinningMarker(result.WinningSlot.Id);
+    }
+
     private void CacheNumberAreas()
     {
         numberAreasBySlotId.Clear();
 
-        if (numberAreasRoot == null)
-            numberAreasRoot = transform;
-
-        RouletteNumberArea[] numberAreas = numberAreasRoot.GetComponentsInChildren<RouletteNumberArea>(true);
+        Transform root = numberAreasRoot != null ? numberAreasRoot : transform;
+        RouletteNumberArea[] numberAreas = root.GetComponentsInChildren<RouletteNumberArea>(true);
 
         foreach (RouletteNumberArea numberArea in numberAreas)
         {
@@ -55,5 +116,30 @@ public class RouletteTableHighlightController : MonoBehaviour
 
             numberAreasBySlotId[numberArea.SlotId] = numberArea;
         }
+    }
+
+    private void CreateWinningMarker()
+    {
+        if (winningMarkerInstance != null)
+            return;
+
+        if (winningMarkerPrefab == null)
+            throw new System.InvalidOperationException("Winning marker prefab is not assigned.");
+
+        Transform root = winningMarkerRoot != null ? winningMarkerRoot : transform;
+
+        winningMarkerInstance = Instantiate(winningMarkerPrefab, root);
+        winningMarkerInstance.name = "WinningMarker";
+        winningMarkerInstance.SetActive(false);
+
+        DisableMarkerColliders(winningMarkerInstance);
+    }
+
+    private static void DisableMarkerColliders(GameObject marker)
+    {
+        Collider[] colliders = marker.GetComponentsInChildren<Collider>(true);
+
+        foreach (Collider collider in colliders)
+            collider.enabled = false;
     }
 }
