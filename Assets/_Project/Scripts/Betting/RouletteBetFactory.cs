@@ -65,11 +65,17 @@ public static class RouletteBetFactory
 
     public static RouletteBet CreateDozen(int dozenIndex, int stake, RouletteWheelType wheelType)
     {
+        if (dozenIndex < 1 || dozenIndex > 3)
+            throw new ArgumentOutOfRangeException(nameof(dozenIndex), dozenIndex, "Dozen index must be between 1 and 3.");
+
         return new RouletteBet(BetType.Dozen, stake, RouletteWheelData.GetDozenSlots(dozenIndex, wheelType).Select(slot => slot.Id));
     }
 
     public static RouletteBet CreateColumn(int columnIndex, int stake, RouletteWheelType wheelType)
     {
+        if (columnIndex < 1 || columnIndex > 3)
+            throw new ArgumentOutOfRangeException(nameof(columnIndex), columnIndex, "Column index must be between 1 and 3.");
+
         return new RouletteBet(BetType.Column, stake, RouletteWheelData.GetColumnSlots(columnIndex, wheelType).Select(slot => slot.Id));
     }
 }
