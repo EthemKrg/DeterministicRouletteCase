@@ -47,6 +47,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ChipStackView
   stakeLabel: {fileID: 4515732731502047598}
+  chipRoot: {fileID: 609523369178664084}
+  chipVisualPrefab: {fileID: 2898011458119944632, guid: 8ed7230f0775ada4ab219793d86a42ec, type: 3}
+  fallbackChipRenderer: {fileID: 1630571000581053332}
+  chipStackOffset: {x: 0, y: 0.05, z: 0}
+  chipMaterials:
+  - denomination: 250
+    material: {fileID: 2100000, guid: 09b3164497507074b8df5fb7f2f038ba, type: 2}
+  - denomination: 500
+    material: {fileID: 2100000, guid: 9612035a59f42d647b8aa793185174a6, type: 2}
+  - denomination: 1000
+    material: {fileID: 2100000, guid: 1fdaade0ad9602e45ac1a4dc6ce9bd79, type: 2}
+  - denomination: 2000
+    material: {fileID: 2100000, guid: 5ec32e9177111a84abab7222481240c4, type: 2}
+  - denomination: 5000
+    material: {fileID: 2100000, guid: db2fca64d8f3e3642aeb81ab73d0ca4e, type: 2}
 --- !u!1 &5342661595631707073
 GameObject:
   m_ObjectHideFlags: 0

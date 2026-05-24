@@ -65,7 +65,8 @@ public class RouletteTableInputController : MonoBehaviour
             RouletteBet bet = betArea.CreateBet(stake, gameFlowController.GameState.WheelType);
 
             gameFlowController.PlacePreparedBet(bet);
-            chipStackViewController.ShowOrUpdateStack(betArea, bet.Stake);
+
+            chipStackViewController.ShowOrUpdateStack(betArea, chipSelectionController.SelectedChip, bet.Stake);
         }
         catch (System.Exception exception)
         {
