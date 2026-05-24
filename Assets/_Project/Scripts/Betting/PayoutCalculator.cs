@@ -16,6 +16,8 @@ public static class PayoutCalculator
     High      -> 1
     Dozen     -> 2
     Column    -> 2
+
+    FiveNumber -> 6
     */
 
     public static int GetMultiplier(BetType betType)
@@ -48,6 +50,9 @@ public static class PayoutCalculator
             case BetType.Dozen:
             case BetType.Column:
                 return 2;
+
+            case BetType.FiveNumber:
+                return 6;
 
             default:
                 throw new ArgumentOutOfRangeException(nameof(betType), betType, "Unsupported bet type.");

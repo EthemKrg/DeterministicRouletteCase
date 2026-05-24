@@ -13,5 +13,8 @@ public enum BetType
     Low,
     High,
     Dozen,
-    Column
+    Column,
+
+
+    FiveNumber,
 }

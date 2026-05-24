@@ -78,4 +78,12 @@ public static class RouletteBetFactory
 
         return new RouletteBet(BetType.Column, stake, RouletteWheelData.GetColumnSlots(columnIndex, wheelType).Select(slot => slot.Id));
     }
+
+    public static RouletteBet CreateFiveNumber(int stake, RouletteWheelType wheelType)
+    {
+        if (wheelType != RouletteWheelType.American)
+            throw new InvalidOperationException("Five-number bet is only available in American roulette.");
+
+        return new RouletteBet(BetType.FiveNumber, stake, new[] { "0", "00", "1", "2", "3" });
+    }
 }
