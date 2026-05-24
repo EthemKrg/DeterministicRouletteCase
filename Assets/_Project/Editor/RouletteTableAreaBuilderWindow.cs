@@ -469,7 +469,8 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
         Vector3 localScale,
         int primaryNumber = 0,
         int secondaryNumber = 0,
-        int index = 0)
+        int index = 0,
+        bool americanOnly = false)
     {
         GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(betAreaPrefab, root);
 
@@ -493,6 +494,11 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
         serializedObject.FindProperty("primaryNumber").intValue = primaryNumber;
         serializedObject.FindProperty("secondaryNumber").intValue = secondaryNumber;
         serializedObject.FindProperty("index").intValue = index;
+
+        SerializedProperty americanOnlyProperty = serializedObject.FindProperty("americanOnly");
+
+        if (americanOnlyProperty != null)
+            americanOnlyProperty.boolValue = americanOnly;
 
         SerializedProperty straightSlotIdProperty = serializedObject.FindProperty("straightSlotId");
 
@@ -611,7 +617,8 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
             "00",
             position,
             areaScale,
-            primaryNumber: 0);
+            primaryNumber: 0,
+            americanOnly: true);
 
         RouletteBetArea betArea = area.GetComponent<RouletteBetArea>();
 
@@ -649,7 +656,8 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
             BetType.FiveNumber,
             "0/00/1/2/3",
             position,
-            scale);
+            scale,
+            americanOnly: true);
 
         SetAreaMaterial(area, defaultMaterial);
 

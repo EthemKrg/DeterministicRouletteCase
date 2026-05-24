@@ -9,11 +9,16 @@ public class RouletteBetArea : MonoBehaviour
     [SerializeField] private int primaryNumber;
     [SerializeField] private int secondaryNumber;
     [SerializeField] private int index;
+    [SerializeField] private bool americanOnly;
 
     public BetType BetType => betType;
+    public bool AmericanOnly => americanOnly;
 
     public RouletteBet CreateBet(int stake, RouletteWheelType wheelType)
     {
+        if (!IsAvailableForWheelType(wheelType))
+            throw new InvalidOperationException($"{betType} is only available in American roulette.");
+
         switch (betType)
         {
             case BetType.Straight:
@@ -63,8 +68,16 @@ public class RouletteBetArea : MonoBehaviour
         }
     }
 
+    public bool IsAvailableForWheelType(RouletteWheelType wheelType)
+    {
+        return !americanOnly || wheelType == RouletteWheelType.American;
+    }
+
     public IReadOnlyList<string> GetPreviewSlotIds(RouletteWheelType wheelType)
     {
+        if (!IsAvailableForWheelType(wheelType))
+            return Array.Empty<string>();
+
         RouletteBet previewBet = CreateBet(10, wheelType);
         return previewBet.CoveredSlotIds;
     }

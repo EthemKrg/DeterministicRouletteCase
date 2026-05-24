@@ -52,6 +52,12 @@ public class RouletteTableInputController : MonoBehaviour
         if (gameFlowController.GameState.FlowState != GameFlowState.Betting)
             return;
 
+        if (hoveredBetArea != null && !hoveredBetArea.IsAvailableForWheelType(gameFlowController.GameState.WheelType))
+        {
+            highlightController.ClearHighlight();
+            return;
+        }
+
         try
         {
             int stake = chipSelectionController.SelectedChipValue;
