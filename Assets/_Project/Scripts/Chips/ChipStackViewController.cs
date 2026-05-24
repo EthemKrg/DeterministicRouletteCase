@@ -37,7 +37,7 @@ public class ChipStackViewController : MonoBehaviour
         }
     }
 
-    public void ShowOrUpdateStack(RouletteBetArea betArea, int addedStake)
+    public void ShowOrUpdateStack(RouletteBetArea betArea, ChipDenomination denomination, int addedStake)
     {
         if (betArea == null)
             return;
@@ -51,6 +51,7 @@ public class ChipStackViewController : MonoBehaviour
         stakesByArea[betArea] += addedStake;
 
         ChipStackView stackView = GetOrCreateStack(betArea);
+        stackView.AddChip(denomination);
         stackView.SetStake(stakesByArea[betArea]);
     }
 
