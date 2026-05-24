@@ -6,6 +6,7 @@ public class ChipStackViewController : MonoBehaviour
     [Header("References")]
     [SerializeField] private GameFlowController gameFlowController;
     [SerializeField] private ChipStackView chipStackPrefab;
+    [SerializeField] private ChipVisualPool chipVisualPool;
     [SerializeField] private Transform stackRoot;
 
     [Header("Placement")]
@@ -21,28 +22,25 @@ public class ChipStackViewController : MonoBehaviour
 
     private void OnEnable()
     {
-        if (gameFlowController != null)
-        {
-            gameFlowController.OnRoundResolved += HandleRoundResolved;
-            gameFlowController.OnBetsCleared += HandleBetsCleared;
-        }
+        if (gameFlowController == null)
+            return;
+
+        gameFlowController.OnRoundResolved += HandleRoundResolved;
+        gameFlowController.OnBetsCleared += HandleBetsCleared;
     }
 
     private void OnDisable()
     {
-        if (gameFlowController != null)
-        {
-            gameFlowController.OnRoundResolved -= HandleRoundResolved;
-            gameFlowController.OnBetsCleared -= HandleBetsCleared;
-        }
+        if (gameFlowController == null)
+            return;
+
+        gameFlowController.OnRoundResolved -= HandleRoundResolved;
+        gameFlowController.OnBetsCleared -= HandleBetsCleared;
     }
 
     public void ShowOrUpdateStack(RouletteBetArea betArea, ChipDenomination denomination, int addedStake)
     {
-        if (betArea == null)
-            return;
-
-        if (addedStake <= 0)
+        if (betArea == null || addedStake <= 0)
             return;
 
         if (!stakesByArea.ContainsKey(betArea))
@@ -51,16 +49,18 @@ public class ChipStackViewController : MonoBehaviour
         stakesByArea[betArea] += addedStake;
 
         ChipStackView stackView = GetOrCreateStack(betArea);
-        stackView.AddChip(denomination);
-        stackView.SetStake(stakesByArea[betArea]);
+        stackView.AddChip(denomination, stakesByArea[betArea]);
     }
 
     public void ClearAll()
     {
         foreach (ChipStackView stackView in stacksByArea.Values)
         {
-            if (stackView != null)
-                Destroy(stackView.gameObject);
+            if (stackView == null)
+                continue;
+
+            stackView.Clear();
+            Destroy(stackView.gameObject);
         }
 
         stacksByArea.Clear();
@@ -80,7 +80,7 @@ public class ChipStackViewController : MonoBehaviour
             Quaternion.identity,
             root);
 
-        stackView.DisableColliders();
+        stackView.Initialize(chipVisualPool);
 
         stacksByArea[betArea] = stackView;
 
@@ -92,17 +92,20 @@ public class ChipStackViewController : MonoBehaviour
         ClearAll();
     }
 
+    private void HandleBetsCleared()
+    {
+        ClearAll();
+    }
+
     private void ValidateReferences()
     {
         if (gameFlowController == null)
             throw new System.InvalidOperationException($"{nameof(ChipStackViewController)} needs a GameFlowController reference.");
 
         if (chipStackPrefab == null)
-            throw new System.InvalidOperationException($"{nameof(ChipStackViewController)} needs a chip stack prefab reference.");
-    }
+            throw new System.InvalidOperationException($"{nameof(ChipStackViewController)} needs a ChipStackView prefab reference.");
 
-    private void HandleBetsCleared()
-    {
-        ClearAll();
+        if (chipVisualPool == null)
+            throw new System.InvalidOperationException($"{nameof(ChipStackViewController)} needs a ChipVisualPool reference.");
     }
 }
