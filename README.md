@@ -113,7 +113,6 @@ Main scripts:
 - `StatisticsTracker`: tracks player stats.
 - `RouletteBetArea`: stores data for one table bet area.
 - `RouletteTableInputController`: reads pointer input and places table bets.
-- `RouletteTableHighlightController`: handles hover preview and winning marker.
 - `ChipSelectionController`: stores the selected chip value.
 
 Patterns used:
