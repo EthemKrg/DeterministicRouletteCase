@@ -68,6 +68,12 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
 
         if (GUILayout.Button("Generate Corner Areas"))
             GenerateCornerAreas();
+
+        if (GUILayout.Button("Generate American 00 Area"))
+            GenerateAmericanDoubleZeroArea();
+
+        if (GUILayout.Button("Generate Five Number Area"))
+            GenerateFiveNumberArea();
     }
 
     private void GenerateStraightAreas()
@@ -580,5 +586,73 @@ public class RouletteTableAreaBuilderWindow : EditorWindow
     {
         for (int i = root.childCount - 1; i >= 0; i--)
             DestroyImmediate(root.GetChild(i).gameObject);
+    }
+
+    private void GenerateAmericanDoubleZeroArea()
+    {
+        if (!CanGenerate())
+            return;
+
+        Transform root = GetOrCreateChild(parent, "Straight");
+
+        Transform existing = root.Find("BetArea_Straight_00");
+        if (existing != null)
+            DestroyImmediate(existing.gameObject);
+
+        Vector3 position = new Vector3(
+            startPosition.x - cellSize.x,
+            startPosition.y,
+            startPosition.z + cellSize.y * 2f);
+
+        GameObject area = CreateArea(
+            root,
+            "BetArea_Straight_00",
+            BetType.Straight,
+            "00",
+            position,
+            areaScale,
+            primaryNumber: 0);
+
+        RouletteBetArea betArea = area.GetComponent<RouletteBetArea>();
+
+        SerializedObject serializedObject = new SerializedObject(betArea);
+        serializedObject.FindProperty("straightSlotId").stringValue = "00";
+        serializedObject.ApplyModifiedProperties();
+
+        SetAreaMaterial(area, greenMaterial);
+        SetNumberArea(area, "00");
+
+        Debug.Log("Generated American 00 bet area.");
+    }
+
+    private void GenerateFiveNumberArea()
+    {
+        if (!CanGenerate())
+            return;
+
+        Transform root = GetOrCreateChild(parent, "FiveNumber");
+        ClearChildren(root);
+
+        Vector3 position = new Vector3(
+            startPosition.x - cellSize.x * 0.5f,
+            startPosition.y + 0.04f,
+            startPosition.z + cellSize.y);
+
+        Vector3 scale = new Vector3(
+            cellSize.x * 0.25f,
+            areaScale.y,
+            cellSize.y * 0.9f);
+
+        GameObject area = CreateArea(
+            root,
+            "BetArea_FiveNumber",
+            BetType.FiveNumber,
+            "0/00/1/2/3",
+            position,
+            scale);
+
+        SetAreaMaterial(area, defaultMaterial);
+
+        Debug.Log("Generated five-number bet area.");
     }
 }

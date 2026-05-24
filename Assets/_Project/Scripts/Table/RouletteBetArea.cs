@@ -55,6 +55,9 @@ public class RouletteBetArea : MonoBehaviour
             case BetType.Column:
                 return RouletteBetFactory.CreateColumn(index, stake, wheelType);
 
+            case BetType.FiveNumber:
+                return RouletteBetFactory.CreateFiveNumber(stake, wheelType);
+
             default:
                 throw new ArgumentOutOfRangeException(nameof(betType), betType, "Unsupported bet area type.");
         }
