@@ -10,6 +10,7 @@ public class GameFlowController : MonoBehaviour
     public event Action OnGameStateChanged;
     public event Action<RoundResult> OnRoundResolved;
     public event Action<string> OnFeedbackRequested;
+    public event Action OnBetsCleared;
 
     private void Awake()
     {
@@ -24,7 +25,10 @@ public class GameFlowController : MonoBehaviour
         bool changed = GameState.SetWheelType(wheelType);
 
         if (changed)
+        {
+            OnBetsCleared?.Invoke();
             OnFeedbackRequested?.Invoke("Wheel type changed. Active bets were cleared.");
+        }
 
         NotifyStateChanged();
     }
@@ -127,6 +131,7 @@ public class GameFlowController : MonoBehaviour
     public void ClearBets()
     {
         GameState.ClearBets();
+        OnBetsCleared?.Invoke();
         NotifyStateChanged();
     }
 
