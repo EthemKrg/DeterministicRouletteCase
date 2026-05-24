@@ -14,12 +14,13 @@ public class RouletteGameState
     private readonly List<RouletteBet> activeBets = new List<RouletteBet>();
 
     public RouletteWheelType WheelType { get; private set; } = RouletteWheelType.European;
-    public int CurrentChips { get; private set; } = 1000;
     public IReadOnlyList<RouletteBet> ActiveBets => activeBets;
 
-    public int MinBet { get; private set; } = 10;
-    public int MaxBetPerBet { get; private set; } = 500;
-    public int MaxTotalActiveBet { get; private set; } = 1000;
+    public int CurrentChips { get; private set; } = 50000;
+
+    public int MinBet { get; private set; } = 250;
+    public int MaxBetPerBet { get; private set; } = 10000;
+    public int MaxTotalActiveBet { get; private set; } = 10000;
 
     public int TotalActiveStake
     {

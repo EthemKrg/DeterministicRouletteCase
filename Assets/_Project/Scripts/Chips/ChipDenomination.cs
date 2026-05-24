@@ -1,8 +1,8 @@
 public enum ChipDenomination
 {
-    Chip10 = 10,
-    Chip25 = 25,
-    Chip50 = 50,
-    Chip100 = 100,
-    Chip500 = 500
+    Chip250 = 250,
+    Chip500 = 500,
+    Chip1000 = 1000,
+    Chip2000 = 2000,
+    Chip5000 = 5000
 }
