@@ -9,6 +9,7 @@ public class RouletteTableInputController : MonoBehaviour
     [SerializeField] private GameFlowController gameFlowController;
     [SerializeField] private ChipSelectionController chipSelectionController;
     [SerializeField] private RouletteTableHighlightController highlightController;
+    [SerializeField] private ChipStackViewController chipStackViewController;
 
     [Header("Raycast")]
     [SerializeField] private LayerMask betAreaLayerMask = ~0;
@@ -52,7 +53,7 @@ public class RouletteTableInputController : MonoBehaviour
         if (gameFlowController.GameState.FlowState != GameFlowState.Betting)
             return;
 
-        if (hoveredBetArea != null && !hoveredBetArea.IsAvailableForWheelType(gameFlowController.GameState.WheelType))
+        if (!betArea.IsAvailableForWheelType(gameFlowController.GameState.WheelType))
         {
             highlightController.ClearHighlight();
             return;
@@ -64,8 +65,7 @@ public class RouletteTableInputController : MonoBehaviour
             RouletteBet bet = betArea.CreateBet(stake, gameFlowController.GameState.WheelType);
 
             gameFlowController.PlacePreparedBet(bet);
-
-            //Debug.Log($"Placed bet: {bet.Type}, stake {bet.Stake}, covers {string.Join(", ", bet.CoveredSlotIds)}");
+            chipStackViewController.ShowOrUpdateStack(betArea, bet.Stake);
         }
         catch (System.Exception exception)
         {
@@ -86,6 +86,9 @@ public class RouletteTableInputController : MonoBehaviour
 
         if (highlightController == null)
             throw new System.InvalidOperationException($"{nameof(RouletteTableInputController)} needs a RouletteTableHighlightController reference.");
+
+        if (chipStackViewController == null)
+            throw new System.InvalidOperationException($"{nameof(RouletteTableInputController)} needs a ChipStackViewController reference.");
     }
 
     private void UpdateHover()
