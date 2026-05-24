@@ -2995,6 +2995,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ChipStackViewController
   gameFlowController: {fileID: 1391496609}
   chipStackPrefab: {fileID: 2801400368653804244, guid: f5ed0622f02e3dd47a273e1dc7cc9b26, type: 3}
+  chipVisualPool: {fileID: 1605834548}
   stackRoot: {fileID: 714594260}
   stackOffset: {x: 0, y: 0.08, z: 0}
 --- !u!1 &200760628 stripped
@@ -10092,6 +10093,37 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: e7bdf7bd904035140ab015fec49cebc9, type: 3}
+--- !u!1 &721962870
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 721962871}
+  m_Layer: 0
+  m_Name: Chip Pool Parent
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &721962871
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 721962870}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -6.54344, y: 0.105, z: -1.42639}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &732775425
 GameObject:
   m_ObjectHideFlags: 0
@@ -14826,6 +14858,7 @@ Transform:
   - {fileID: 194876331}
   - {fileID: 1885019937}
   - {fileID: 1563022383}
+  - {fileID: 1605834547}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &1157880848 stripped
@@ -14978,7 +15011,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7418cc8ae283b8f4c99f91dce1fbca32, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ChipSelectionController
-  selectedChip: 10
+  selectedChip: 250
+  defaultChip: 250
 --- !u!4 &1167926218 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1106981751309330641, guid: e7bdf7bd904035140ab015fec49cebc9, type: 3}
@@ -20397,6 +20431,53 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: e7bdf7bd904035140ab015fec49cebc9, type: 3}
+--- !u!1 &1605834546
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1605834547}
+  - component: {fileID: 1605834548}
+  m_Layer: 0
+  m_Name: ChipVisualPool
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1605834547
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1605834546}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1153494212}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1605834548
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1605834546}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0920ce95978169b4988ba9af09c0a7a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChipVisualPool
+  chipPrefab: {fileID: 7799035220365366637, guid: ccf1db986678fc64899d446a363485b7, type: 3}
+  inactiveRoot: {fileID: 721962871}
+  prewarmCount: 20
 --- !u!4 &1609602930 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1106981751309330641, guid: e7bdf7bd904035140ab015fec49cebc9, type: 3}
@@ -23533,7 +23614,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1885019937}
   - component: {fileID: 1885019938}
-  - component: {fileID: 1885019939}
   m_Layer: 7
   m_Name: ChipSelection3DView
   m_TagString: Untagged
@@ -23576,27 +23656,6 @@ MonoBehaviour:
   - {fileID: 2145156204}
   - {fileID: 1886642568}
   - {fileID: 1611317689}
---- !u!65 &1885019939
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1885019936}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &1886642568 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7761482561316313603, guid: 8ed7230f0775ada4ab219793d86a42ec, type: 3}
@@ -26685,3 +26744,4 @@ SceneRoots:
   - {fileID: 1168179304}
   - {fileID: 714594260}
   - {fileID: 803283132}
+  - {fileID: 721962871}

@@ -1,100 +1,70 @@
-using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
 public class ChipStackView : MonoBehaviour
 {
-    [Serializable]
-    private class ChipMaterialEntry
+    [SerializeField] private Transform chipRoot;
+    [SerializeField] private TMP_Text totalStakeLabel;
+    [SerializeField] private Transform totalStakeLabelRoot;
+    [SerializeField] private Vector3 chipStackOffset = new Vector3(0f, 0.025f, 0f);
+    [SerializeField] private Vector3 labelBaseOffset = new Vector3(0f, 0.08f, 0f);
+
+    private readonly List<ChipVisual> chips = new List<ChipVisual>();
+
+    private ChipVisualPool chipPool;
+
+    public void Initialize(ChipVisualPool pool)
     {
-        public ChipDenomination denomination;
-        public Material material;
+        chipPool = pool;
     }
 
-    [SerializeField] private TMP_Text stakeLabel;
-    [SerializeField] private Transform chipRoot;
-    [SerializeField] private GameObject chipVisualPrefab;
-    [SerializeField] private Renderer fallbackChipRenderer;
-    [SerializeField] private Vector3 chipStackOffset = new Vector3(0f, 0.025f, 0f);
-    [SerializeField] private ChipMaterialEntry[] chipMaterials;
-
-    private readonly List<GameObject> chipVisuals = new List<GameObject>();
-
-    public void AddChip(ChipDenomination denomination)
+    public void AddChip(ChipDenomination denomination, int totalStake)
     {
-        if (chipVisualPrefab == null)
-            return;
+        if (chipPool == null)
+            throw new System.InvalidOperationException($"{nameof(ChipStackView)} is missing ChipVisualPool.");
 
         Transform root = chipRoot != null ? chipRoot : transform;
 
-        GameObject chip = Instantiate(chipVisualPrefab, root);
-        chip.transform.localPosition = chipStackOffset * chipVisuals.Count;
+        ChipVisual chip = chipPool.Get(root);
+        chip.Setup(denomination);
+
+        int chipIndex = chips.Count;
+        chip.transform.localPosition = chipStackOffset * chipIndex;
         chip.transform.localRotation = Quaternion.identity;
+        chip.transform.localScale = Vector3.one;
 
-        ApplyMaterial(chip, denomination);
-        DisableColliders(chip);
+        chips.Add(chip);
 
-        chipVisuals.Add(chip);
+        SetTotalStake(totalStake);
+        UpdateLabelPosition();
     }
 
-    public void SetStake(int stake)
+    public void SetTotalStake(int totalStake)
     {
-        if (stakeLabel != null)
-            stakeLabel.text = stake.ToString();
+        if (totalStakeLabel != null)
+            totalStakeLabel.text = totalStake.ToString();
     }
 
     public void Clear()
     {
-        foreach (GameObject chip in chipVisuals)
+        if (chipPool != null)
         {
-            if (chip != null)
-                Destroy(chip);
+            for (int i = chips.Count - 1; i >= 0; i--)
+                chipPool.Release(chips[i]);
         }
 
-        chipVisuals.Clear();
+        chips.Clear();
 
-        if (stakeLabel != null)
-            stakeLabel.text = string.Empty;
+        if (totalStakeLabel != null)
+            totalStakeLabel.text = string.Empty;
     }
 
-    public void DisableColliders()
+    private void UpdateLabelPosition()
     {
-        DisableColliders(gameObject);
-    }
-
-    private void ApplyMaterial(GameObject chip, ChipDenomination denomination)
-    {
-        Material material = GetMaterial(denomination);
-
-        if (material == null)
+        if (totalStakeLabelRoot == null)
             return;
 
-        Renderer renderer = chip.GetComponentInChildren<Renderer>();
-
-        if (renderer == null)
-            renderer = fallbackChipRenderer;
-
-        if (renderer != null)
-            renderer.sharedMaterial = material;
-    }
-
-    private Material GetMaterial(ChipDenomination denomination)
-    {
-        foreach (ChipMaterialEntry entry in chipMaterials)
-        {
-            if (entry != null && entry.denomination == denomination)
-                return entry.material;
-        }
-
-        return null;
-    }
-
-    private static void DisableColliders(GameObject target)
-    {
-        Collider[] colliders = target.GetComponentsInChildren<Collider>(true);
-
-        foreach (Collider collider in colliders)
-            collider.enabled = false;
+        totalStakeLabelRoot.localPosition = labelBaseOffset + chipStackOffset * chips.Count;
     }
 }
