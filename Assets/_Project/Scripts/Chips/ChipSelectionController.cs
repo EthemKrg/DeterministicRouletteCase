@@ -4,7 +4,9 @@ using UnityEngine;
 public class ChipSelectionController : MonoBehaviour
 {
     [SerializeField] private ChipDenomination selectedChip = ChipDenomination.Chip250;
+    [SerializeField] private ChipDenomination defaultChip = ChipDenomination.Chip250;
 
+    public ChipDenomination SelectedChip => selectedChip;
     public int SelectedChipValue => (int)selectedChip;
 
     public event Action<int> OnSelectedChipChanged;
@@ -40,6 +42,12 @@ public class ChipSelectionController : MonoBehaviour
             return;
 
         selectedChip = chip;
+        OnSelectedChipChanged?.Invoke(SelectedChipValue);
+    }
+
+    public void SelectDefaultChip()
+    {
+        selectedChip = defaultChip;
         OnSelectedChipChanged?.Invoke(SelectedChipValue);
     }
 }

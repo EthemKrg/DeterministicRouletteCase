@@ -5,6 +5,8 @@ public class ChipSelection3DView : MonoBehaviour
     [SerializeField] private ChipSelectionController chipSelectionController;
     [SerializeField] private GameFlowController gameFlowController;
     [SerializeField] private ChipSelection3DButton[] buttons;
+    
+    private GameFlowState lastFlowState;
 
     private void Awake()
     {
@@ -29,6 +31,9 @@ public class ChipSelection3DView : MonoBehaviour
 
     private void Start()
     {
+        lastFlowState = gameFlowController.GameState.FlowState;
+
+        chipSelectionController.SelectDefaultChip();
         RefreshSelection(chipSelectionController.SelectedChipValue);
     }
 
@@ -45,8 +50,16 @@ public class ChipSelection3DView : MonoBehaviour
 
     private void HandleGameStateChanged()
     {
-        if (gameFlowController.GameState.FlowState == GameFlowState.Betting)
+        GameFlowState currentFlowState = gameFlowController.GameState.FlowState;
+
+        if (currentFlowState == lastFlowState)
+            return;
+
+        lastFlowState = currentFlowState;
+
+        if (currentFlowState == GameFlowState.Betting)
         {
+            chipSelectionController.SelectDefaultChip();
             RefreshSelection(chipSelectionController.SelectedChipValue);
             return;
         }
