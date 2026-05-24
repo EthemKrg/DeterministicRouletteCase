@@ -6,17 +6,17 @@ public class ChipStackView : MonoBehaviour
 {
     [SerializeField] private Transform chipRoot;
     [SerializeField] private TMP_Text totalStakeLabel;
-    [SerializeField] private Transform totalStakeLabelRoot;
     [SerializeField] private Vector3 chipStackOffset = new Vector3(0f, 0.025f, 0f);
-    [SerializeField] private Vector3 labelBaseOffset = new Vector3(0f, 0.08f, 0f);
 
     private readonly List<ChipVisual> chips = new List<ChipVisual>();
 
     private ChipVisualPool chipPool;
+    private Vector3 defaultTotalStakeLabelLocalPos;
 
     public void Initialize(ChipVisualPool pool)
     {
         chipPool = pool;
+        defaultTotalStakeLabelLocalPos = totalStakeLabel.transform.localPosition;
     }
 
     public void AddChip(ChipDenomination denomination, int totalStake)
@@ -34,10 +34,12 @@ public class ChipStackView : MonoBehaviour
         chip.transform.localRotation = Quaternion.identity;
         chip.transform.localScale = Vector3.one;
 
+        var stakeLabelPos = defaultTotalStakeLabelLocalPos + chipStackOffset * chipIndex;
+        totalStakeLabel.transform.localPosition = stakeLabelPos;
+
         chips.Add(chip);
 
         SetTotalStake(totalStake);
-        UpdateLabelPosition();
     }
 
     public void SetTotalStake(int totalStake)
@@ -58,13 +60,5 @@ public class ChipStackView : MonoBehaviour
 
         if (totalStakeLabel != null)
             totalStakeLabel.text = string.Empty;
-    }
-
-    private void UpdateLabelPosition()
-    {
-        if (totalStakeLabelRoot == null)
-            return;
-
-        totalStakeLabelRoot.localPosition = labelBaseOffset + chipStackOffset * chips.Count;
     }
 }

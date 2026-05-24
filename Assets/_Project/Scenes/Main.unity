@@ -2997,7 +2997,7 @@ MonoBehaviour:
   chipStackPrefab: {fileID: 2801400368653804244, guid: f5ed0622f02e3dd47a273e1dc7cc9b26, type: 3}
   chipVisualPool: {fileID: 1605834548}
   stackRoot: {fileID: 714594260}
-  stackOffset: {x: 0, y: 0.08, z: 0}
+  stackOffset: {x: -0.12, y: 0, z: -0.12}
 --- !u!1 &200760628 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2113794714461825311, guid: e7bdf7bd904035140ab015fec49cebc9, type: 3}
