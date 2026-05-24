@@ -1,5 +1,4 @@
 using System;
-using TMPro;
 using UnityEngine;
 
 public class ChipVisual : MonoBehaviour
@@ -12,12 +11,10 @@ public class ChipVisual : MonoBehaviour
     }
 
     [SerializeField] private Renderer targetRenderer;
-    [SerializeField] private TMP_Text valueLabel;
     [SerializeField] private ChipMaterialEntry[] chipMaterials;
 
     public void Setup(ChipDenomination denomination)
     {
-        SetLabel(denomination);
         SetMaterial(denomination);
         DisableColliders();
     }
@@ -27,15 +24,6 @@ public class ChipVisual : MonoBehaviour
         transform.localPosition = Vector3.zero;
         transform.localRotation = Quaternion.identity;
         transform.localScale = Vector3.one;
-    }
-
-    private void SetLabel(ChipDenomination denomination)
-    {
-        if (valueLabel == null)
-            return;
-
-        int value = (int)denomination;
-        valueLabel.text = value >= 1000 ? $"{value / 1000}K" : value.ToString();
     }
 
     private void SetMaterial(ChipDenomination denomination)
