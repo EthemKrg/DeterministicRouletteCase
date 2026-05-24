@@ -145,6 +145,14 @@ public class GameFlowController : MonoBehaviour
         PlaceBet(bet);
     }
 
+    public void RequestFeedback(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+            return;
+
+        OnFeedbackRequested?.Invoke(message);
+    }
+
     private void PlaceBet(RouletteBet bet)
     {
         GameState.PlaceBet(bet);

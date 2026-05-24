@@ -69,7 +69,7 @@ public class RouletteTableInputController : MonoBehaviour
         }
         catch (System.Exception exception)
         {
-            Debug.LogWarning(exception.Message);
+            gameFlowController.RequestFeedback(exception.Message);
         }
     }
 
