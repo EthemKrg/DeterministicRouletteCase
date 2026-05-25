@@ -10,6 +10,7 @@ public class RouletteTableInputController : MonoBehaviour
     [SerializeField] private ChipSelectionController chipSelectionController;
     [SerializeField] private RouletteTableHighlightController highlightController;
     [SerializeField] private ChipStackViewController chipStackViewController;
+    [SerializeField] private BalanceChipDisplayController balanceChipDisplayController;
 
     [Header("Raycast")]
     [SerializeField] private LayerMask betAreaLayerMask = ~0;
@@ -62,14 +63,29 @@ public class RouletteTableInputController : MonoBehaviour
         try
         {
             int stake = chipSelectionController.SelectedChipValue;
+            ChipDenomination selectedChip = chipSelectionController.SelectedChip;
             RouletteBet bet = betArea.CreateBet(stake, gameFlowController.GameState.WheelType);
+
+            if (balanceChipDisplayController != null)
+            {
+                Vector3 stackPosition = chipStackViewController.GetNextChipWorldPosition(betArea);
+                int stackVisualVersion = chipStackViewController.GetVisualVersion();
+                balanceChipDisplayController.SetNextBetChipTarget(
+                    selectedChip,
+                    stackPosition,
+                    () => chipStackViewController.ShowOrUpdateStack(betArea, selectedChip, bet.Stake, stackVisualVersion));
+            }
 
             gameFlowController.PlacePreparedBet(bet);
 
-            chipStackViewController.ShowOrUpdateStack(betArea, chipSelectionController.SelectedChip, bet.Stake);
+            if (balanceChipDisplayController == null)
+                chipStackViewController.ShowOrUpdateStack(betArea, selectedChip, bet.Stake);
         }
         catch (System.Exception exception)
         {
+            if (balanceChipDisplayController != null)
+                balanceChipDisplayController.ClearNextBetChipTarget();
+
             gameFlowController.RequestFeedback(exception.Message);
         }
     }
