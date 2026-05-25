@@ -105,9 +105,6 @@ public class DebugGameFlowUI : MonoBehaviour
         if (stakeInput != null && string.IsNullOrWhiteSpace(stakeInput.text))
             stakeInput.SetTextWithoutNotify(gameFlowController.GameState.MinBet.ToString());
 
-        if (winningSlotInput != null && string.IsNullOrWhiteSpace(winningSlotInput.text))
-            winningSlotInput.SetTextWithoutNotify(DefaultSlotId);
-
         if (straightBetSlotInput != null && string.IsNullOrWhiteSpace(straightBetSlotInput.text))
             straightBetSlotInput.SetTextWithoutNotify(DefaultSlotId);
 
@@ -155,7 +152,7 @@ public class DebugGameFlowUI : MonoBehaviour
     {
         string slotId = winningSlotInput.text.Trim();
 
-        if (!IsSlotValid(slotId))
+        if (!IsOptionalResultSlotValid(slotId))
         {
             ShowFeedback($"Result slot '{slotId}' is not valid for {gameFlowController.GameState.WheelType} roulette.", true);
             return;
@@ -275,7 +272,7 @@ public class DebugGameFlowUI : MonoBehaviour
 
     private void UpdateActionButtons()
     {
-        bool isWinningSlotValid = IsSlotValid(winningSlotInput.text.Trim());
+        bool isWinningSlotValid = IsOptionalResultSlotValid(winningSlotInput.text.Trim());
         bool isStraightBetSlotValid = IsSlotValid(straightBetSlotInput.text.Trim());
         bool hasActiveBets = gameFlowController.GameState.ActiveBets.Count > 0;
         bool isBettingState = gameFlowController.GameState.FlowState == GameFlowState.Betting;
@@ -290,7 +287,7 @@ public class DebugGameFlowUI : MonoBehaviour
         string resultSlotId = winningSlotInput.text.Trim();
         string straightSlotId = straightBetSlotInput.text.Trim();
 
-        if (!IsSlotValid(resultSlotId))
+        if (!IsOptionalResultSlotValid(resultSlotId))
         {
             if (showFeedback)
                 ShowFeedback($"Result slot '{resultSlotId}' is not valid for {gameFlowController.GameState.WheelType} roulette.", true);
@@ -318,5 +315,10 @@ public class DebugGameFlowUI : MonoBehaviour
             return false;
 
         return RouletteWheelData.GetSlotById(slotId.Trim(), gameFlowController.GameState.WheelType) != null;
+    }
+
+    private bool IsOptionalResultSlotValid(string slotId)
+    {
+        return string.IsNullOrWhiteSpace(slotId) || IsSlotValid(slotId);
     }
 }
