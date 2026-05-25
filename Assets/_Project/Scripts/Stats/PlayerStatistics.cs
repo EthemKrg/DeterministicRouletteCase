@@ -4,6 +4,8 @@ public class PlayerStatistics
     public int TotalWins { get; private set; }
     public int TotalLosses { get; private set; }
     public int TotalProfitLoss { get; private set; }
+    public int TotalWagered { get; private set; }
+    public int BestRoundNetProfit { get; private set; }
 
     public string LastWinningSlotId { get; private set; }
     public int LastRoundNetProfit { get; private set; }
@@ -33,6 +35,11 @@ public class PlayerStatistics
             TotalLosses++;
 
         TotalProfitLoss += roundResult.NetProfit;
+        TotalWagered += roundResult.TotalStake;
+
+        if (roundResult.NetProfit > BestRoundNetProfit)
+            BestRoundNetProfit = roundResult.NetProfit;
+
         LastRoundNetProfit = roundResult.NetProfit;
         LastWinningSlotId = roundResult.WinningSlot.Id;
     }
@@ -43,6 +50,8 @@ public class PlayerStatistics
         TotalWins = 0;
         TotalLosses = 0;
         TotalProfitLoss = 0;
+        TotalWagered = 0;
+        BestRoundNetProfit = 0;
         LastWinningSlotId = string.Empty;
         LastRoundNetProfit = 0;
     }

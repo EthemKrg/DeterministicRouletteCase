@@ -240,6 +240,8 @@ public class DebugGameFlowUI : MonoBehaviour
         builder.AppendLine($"Losses: {stats.TotalLosses}");
         builder.AppendLine($"Win Rate: {stats.WinRate:0.0}%");
         builder.AppendLine($"Profit/Loss: {stats.TotalProfitLoss}");
+        builder.AppendLine($"Total Wagered: {stats.TotalWagered}");
+        builder.AppendLine($"Best Win: {stats.BestRoundNetProfit}");
         builder.AppendLine($"Last Slot: {stats.LastWinningSlotId}");
         builder.AppendLine($"Last Round Net: {stats.LastRoundNetProfit}");
 
