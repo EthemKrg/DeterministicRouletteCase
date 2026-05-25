@@ -106,7 +106,7 @@ public class GameFlowController : MonoBehaviour
         if (GameState.ActiveBets.Count == 0)
             throw new InvalidOperationException("Place at least one bet before spinning.");
 
-        RouletteSlot winningSlot = RouletteWheelData.GetSlotById(winningSlotId, GameState.WheelType);
+        RouletteSlot winningSlot = GetSpinResult(winningSlotId);
 
         if (winningSlot == null)
             throw new ArgumentException($"Winning slot not found: {winningSlotId}", nameof(winningSlotId));
@@ -126,6 +126,16 @@ public class GameFlowController : MonoBehaviour
 
         OnRoundResolved?.Invoke(LastRoundResult);
         NotifyStateChanged();
+    }
+
+    private RouletteSlot GetSpinResult(string winningSlotId)
+    {
+        if (!string.IsNullOrWhiteSpace(winningSlotId))
+            return RouletteWheelData.GetSlotById(winningSlotId.Trim(), GameState.WheelType);
+
+        var slots = RouletteWheelData.GetSlots(GameState.WheelType);
+        int randomIndex = UnityEngine.Random.Range(0, slots.Count);
+        return slots[randomIndex];
     }
 
     public void ClearBets()
