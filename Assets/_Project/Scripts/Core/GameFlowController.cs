@@ -120,7 +120,7 @@ public class GameFlowController : MonoBehaviour
         LastRoundResult = BetResolver.Resolve(winningSlot, GameState.ActiveBets);
 
         GameState.ApplyRoundResult(LastRoundResult);
-        StatisticsTracker.TrackRound(LastRoundResult);
+        StatisticsTracker.TrackRound(LastRoundResult, GameState.WheelType);
 
         GameState.SetFlowState(GameFlowState.Betting);
 

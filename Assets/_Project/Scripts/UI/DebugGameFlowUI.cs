@@ -226,12 +226,14 @@ public class DebugGameFlowUI : MonoBehaviour
 
         RouletteGameState state = gameFlowController.GameState;
         PlayerStatistics stats = gameFlowController.StatisticsTracker.Statistics;
+        PlayerStatistics wheelStats = gameFlowController.StatisticsTracker.GetStatistics(state.WheelType);
 
         StringBuilder builder = new StringBuilder();
         builder.AppendLine($"Wheel: {state.WheelType}");
         builder.AppendLine($"Chips: {state.CurrentChips}");
         builder.AppendLine($"Active Bets: {state.ActiveBets.Count}");
         builder.AppendLine();
+        builder.AppendLine("Overall Stats");
         builder.AppendLine($"Spins: {stats.TotalSpins}");
         builder.AppendLine($"Wins: {stats.TotalWins}");
         builder.AppendLine($"Losses: {stats.TotalLosses}");
@@ -241,6 +243,13 @@ public class DebugGameFlowUI : MonoBehaviour
         builder.AppendLine($"Best Win: {stats.BestRoundNetProfit}");
         builder.AppendLine($"Last Slot: {stats.LastWinningSlotId}");
         builder.AppendLine($"Last Round Net: {stats.LastRoundNetProfit}");
+        builder.AppendLine();
+        builder.AppendLine($"{state.WheelType} Stats");
+        builder.AppendLine($"Spins: {wheelStats.TotalSpins}");
+        builder.AppendLine($"Wins: {wheelStats.TotalWins}");
+        builder.AppendLine($"Losses: {wheelStats.TotalLosses}");
+        builder.AppendLine($"Profit/Loss: {wheelStats.TotalProfitLoss}");
+        builder.AppendLine($"Total Wagered: {wheelStats.TotalWagered}");
 
         stateText.text = builder.ToString();
 
