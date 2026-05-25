@@ -18,6 +18,20 @@ public class BalanceChipDisplayController : MonoBehaviour
         }
     }
 
+    private class PendingBetChip
+    {
+        public readonly ChipDenomination Denomination;
+        public readonly Vector3 Target;
+        public readonly Action OnArrived;
+
+        public PendingBetChip(ChipDenomination denomination, Vector3 target, Action onArrived)
+        {
+            Denomination = denomination;
+            Target = target;
+            OnArrived = onArrived;
+        }
+    }
+
     private struct ChipPose
     {
         public readonly Vector3 Position;
@@ -60,12 +74,10 @@ public class BalanceChipDisplayController : MonoBehaviour
 
     private readonly List<DisplayedChip> activeChips = new List<DisplayedChip>();
     private readonly List<ChipVisual> flyingChips = new List<ChipVisual>();
+    private readonly List<DisplayedChip> returningChips = new List<DisplayedChip>();
+    private readonly List<PendingBetChip> pendingBetChips = new List<PendingBetChip>();
 
     private int activeReturnAnimations;
-    private bool hasPendingBetChip;
-    private ChipDenomination pendingBetChipDenomination;
-    private Vector3 pendingBetChipTarget;
-    private Action pendingBetChipArrived;
 
     private void Awake()
     {
@@ -98,18 +110,20 @@ public class BalanceChipDisplayController : MonoBehaviour
         if (balanceText != null)
             balanceText.text = $"Current Balance:\n {currentChips}";
 
-        if (activeReturnAnimations > 0 && GetDisplayedChipTotal() == currentChips)
+        int targetActiveChips = Mathf.Max(0, currentChips - GetReturningChipTotal());
+
+        if (activeReturnAnimations > 0 && GetDisplayedChipTotal() == targetActiveChips)
             return;
 
         if (activeChips.Count == 0)
         {
-            RebuildChips(currentChips);
+            RebuildChips(targetActiveChips);
             return;
         }
 
-        if (!ApplyBalanceDifference(currentChips))
+        if (!ApplyBalanceDifference(targetActiveChips))
         {
-            RebuildChips(currentChips);
+            RebuildChips(targetActiveChips);
             return;
         }
 
@@ -129,26 +143,21 @@ public class BalanceChipDisplayController : MonoBehaviour
 
     public void SetNextBetChipTarget(ChipDenomination denomination, Vector3 worldTargetPosition, Action onArrived)
     {
-        hasPendingBetChip = true;
-        pendingBetChipDenomination = denomination;
-        pendingBetChipTarget = worldTargetPosition;
-        pendingBetChipArrived = onArrived;
+        pendingBetChips.Add(new PendingBetChip(denomination, worldTargetPosition, onArrived));
     }
 
     public void ClearNextBetChipTarget()
     {
-        hasPendingBetChip = false;
-        pendingBetChipDenomination = default;
-        pendingBetChipTarget = Vector3.zero;
-        pendingBetChipArrived = null;
+        if (pendingBetChips.Count == 0)
+            return;
+
+        pendingBetChips.RemoveAt(pendingBetChips.Count - 1);
     }
 
     public void ReturnChipsToBalance(List<ChipStackView.ReturnChip> returnChips)
     {
         if (returnChips == null || returnChips.Count == 0)
             return;
-
-        HashSet<ChipVisual> returningVisuals = new HashSet<ChipVisual>();
 
         for (int i = 0; i < returnChips.Count; i++)
         {
@@ -158,27 +167,17 @@ public class BalanceChipDisplayController : MonoBehaviour
                 continue;
 
             chip.transform.SetParent(displayRoot, true);
-            activeChips.Add(new DisplayedChip(returnChips[i].Denomination, chip));
-            returningVisuals.Add(chip);
-        }
+            DisplayedChip returningChip = new DisplayedChip(returnChips[i].Denomination, chip);
 
-        SortChips();
+            int landingIndex = GetReturnLandingIndex(returningChip.Denomination);
+            returningChips.Add(returningChip);
 
-        for (int i = 0; i < activeChips.Count; i++)
-        {
-            DisplayedChip chip = activeChips[i];
-            Vector3 targetPosition = stackSpacing * i;
+            Vector3 targetPosition = stackSpacing * landingIndex;
             Quaternion targetRotation = Quaternion.Euler(stackRotation);
             Vector3 targetScale = Vector3.one * chipScale;
 
-            if (returningVisuals.Contains(chip.Visual))
-            {
-                activeReturnAnimations++;
-                StartCoroutine(AnimateReturnedChip(chip.Visual, targetPosition, targetRotation, targetScale));
-                continue;
-            }
-
-            ApplyChipTransform(chip.Visual.transform, targetPosition, targetRotation, targetScale);
+            activeReturnAnimations++;
+            StartCoroutine(AnimateReturnedChip(returningChip, targetPosition, targetRotation, targetScale));
         }
     }
 
@@ -266,8 +265,41 @@ public class BalanceChipDisplayController : MonoBehaviour
 
     private bool RemoveAmount(int chipAmount)
     {
+        if (pendingBetChips.Count > 0)
+        {
+            if (!RemovePendingBetChips(chipAmount, out int remaining))
+                return false;
+
+            return remaining == 0 || RemoveRegularAmount(remaining);
+        }
+
+        return RemoveRegularAmount(chipAmount);
+    }
+
+    private bool RemovePendingBetChips(int chipAmount, out int remaining)
+    {
+        remaining = chipAmount;
+
+        while (remaining > 0 && pendingBetChips.Count > 0)
+        {
+            PendingBetChip pendingBetChip = pendingBetChips[0];
+
+            if ((int)pendingBetChip.Denomination > remaining)
+                break;
+
+            if (!RemovePendingBetChip(pendingBetChip))
+                return false;
+
+            remaining -= (int)pendingBetChip.Denomination;
+        }
+
+        return true;
+    }
+
+    private bool RemoveRegularAmount(int chipAmount)
+    {
         if (TryGetDenomination(chipAmount, out ChipDenomination denomination))
-            return RemoveDenominationAmount(denomination);
+            return RemoveChipByDenomination(denomination);
 
         int remaining = chipAmount;
 
@@ -288,7 +320,7 @@ public class BalanceChipDisplayController : MonoBehaviour
         return remaining == 0;
     }
 
-    private bool RemoveDenominationAmount(ChipDenomination denomination)
+    private bool RemoveChipByDenomination(ChipDenomination denomination)
     {
         int chipIndex = FindChipIndex(denomination);
 
@@ -301,7 +333,25 @@ public class BalanceChipDisplayController : MonoBehaviour
             chipIndex = FindChipIndex(denomination);
         }
 
-        ReleaseChipAt(chipIndex, ShouldFlyToBet(denomination));
+        ReleaseChipAt(chipIndex, null);
+        return true;
+    }
+
+    private bool RemovePendingBetChip(PendingBetChip pendingBetChip)
+    {
+        int chipIndex = FindChipIndex(pendingBetChip.Denomination);
+
+        while (chipIndex < 0)
+        {
+            if (!TryBreakLargerChip((int)pendingBetChip.Denomination))
+                return false;
+
+            SortAndLayoutChips();
+            chipIndex = FindChipIndex(pendingBetChip.Denomination);
+        }
+
+        pendingBetChips.Remove(pendingBetChip);
+        ReleaseChipAt(chipIndex, pendingBetChip);
         return true;
     }
 
@@ -331,7 +381,7 @@ public class BalanceChipDisplayController : MonoBehaviour
             if (index < 0)
                 continue;
 
-            ReleaseChipAt(index, false);
+            ReleaseChipAt(index, null);
             removedDenomination = denomination;
             return true;
         }
@@ -354,7 +404,7 @@ public class BalanceChipDisplayController : MonoBehaviour
                 continue;
 
             ChipPose brokenChipPose = new ChipPose(activeChips[chipIndex].Visual.transform);
-            ReleaseChipAt(chipIndex, false);
+            ReleaseChipAt(chipIndex, null);
             return AddAmount((int)denomination, i + 1, brokenChipPose);
         }
 
@@ -382,16 +432,15 @@ public class BalanceChipDisplayController : MonoBehaviour
         activeChips.Add(new DisplayedChip(denomination, chip));
     }
 
-    private void ReleaseChipAt(int index, bool flyToBet)
+    private void ReleaseChipAt(int index, PendingBetChip pendingBetChip)
     {
         DisplayedChip chip = activeChips[index];
         activeChips.RemoveAt(index);
 
-        if (flyToBet)
+        if (pendingBetChip != null)
         {
             flyingChips.Add(chip.Visual);
-            StartCoroutine(FlyChipToBet(chip.Visual, pendingBetChipTarget, pendingBetChipArrived));
-            ClearNextBetChipTarget();
+            StartCoroutine(FlyChipToBet(chip.Visual, pendingBetChip.Target, pendingBetChip.OnArrived));
             return;
         }
 
@@ -419,6 +468,38 @@ public class BalanceChipDisplayController : MonoBehaviour
         return total;
     }
 
+    private int GetReturningChipTotal()
+    {
+        int total = 0;
+
+        foreach (DisplayedChip chip in returningChips)
+            total += (int)chip.Denomination;
+
+        return total;
+    }
+
+    private int GetReturnLandingIndex(ChipDenomination denomination)
+    {
+        int index = 0;
+        int chipValue = (int)denomination;
+
+        for (int i = 0; i < activeChips.Count; i++)
+        {
+            if ((int)activeChips[i].Denomination > chipValue)
+                index++;
+        }
+
+        for (int i = 0; i < returningChips.Count; i++)
+        {
+            int returningValue = (int)returningChips[i].Denomination;
+
+            if (returningValue >= chipValue)
+                index++;
+        }
+
+        return index;
+    }
+
     private void SortChips()
     {
         activeChips.Sort((first, second) => ((int)second.Denomination).CompareTo((int)first.Denomination));
@@ -441,11 +522,6 @@ public class BalanceChipDisplayController : MonoBehaviour
                 Quaternion.Euler(stackRotation),
                 Vector3.one * chipScale);
         }
-    }
-
-    private bool ShouldFlyToBet(ChipDenomination denomination)
-    {
-        return hasPendingBetChip && pendingBetChipDenomination == denomination;
     }
 
     private IEnumerator FlyChipToBet(ChipVisual chip, Vector3 targetPosition, Action onArrived)
@@ -483,9 +559,9 @@ public class BalanceChipDisplayController : MonoBehaviour
         return position;
     }
 
-    private IEnumerator AnimateReturnedChip(ChipVisual chip, Vector3 targetPosition, Quaternion targetRotation, Vector3 targetScale)
+    private IEnumerator AnimateReturnedChip(DisplayedChip chip, Vector3 targetPosition, Quaternion targetRotation, Vector3 targetScale)
     {
-        Transform chipTransform = chip.transform;
+        Transform chipTransform = chip.Visual.transform;
         Vector3 startPosition = chipTransform.localPosition;
         Quaternion startRotation = chipTransform.localRotation;
         Vector3 startScale = chipTransform.localScale;
@@ -505,7 +581,10 @@ public class BalanceChipDisplayController : MonoBehaviour
         }
 
         ApplyChipTransform(chipTransform, targetPosition, targetRotation, targetScale);
+        returningChips.Remove(chip);
+        activeChips.Add(chip);
         activeReturnAnimations--;
+        SortAndLayoutChips();
     }
 
     private void ApplyChipTransform(Transform chipTransform, Vector3 localPosition, Quaternion localRotation, Vector3 localScale)
@@ -532,7 +611,12 @@ public class BalanceChipDisplayController : MonoBehaviour
             chipVisualPool.Release(flyingChips[i]);
 
         flyingChips.Clear();
-        ClearNextBetChipTarget();
+
+        for (int i = returningChips.Count - 1; i >= 0; i--)
+            chipVisualPool.Release(returningChips[i].Visual);
+
+        returningChips.Clear();
+        pendingBetChips.Clear();
     }
 
     private void ValidateReferences()

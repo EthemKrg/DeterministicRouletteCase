@@ -145,6 +145,26 @@ public class GameFlowController : MonoBehaviour
         PlaceBet(bet);
     }
 
+    public bool TryRemoveLastBet(RouletteBet betTemplate, out int refundedStake, bool notifyStateChanged = true)
+    {
+        refundedStake = 0;
+
+        if (GameState.FlowState != GameFlowState.Betting)
+            return false;
+
+        bool removed = GameState.TryRemoveLastMatchingBet(betTemplate, out refundedStake);
+
+        if (removed && notifyStateChanged)
+            NotifyStateChanged();
+
+        return removed;
+    }
+
+    public void RefreshStateViews()
+    {
+        NotifyStateChanged();
+    }
+
     public void RequestFeedback(string message)
     {
         if (string.IsNullOrWhiteSpace(message))

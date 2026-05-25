@@ -95,6 +95,29 @@ public class RouletteGameState
         CurrentChips -= bet.Stake;
     }
 
+    public bool TryRemoveLastMatchingBet(RouletteBet betTemplate, out int refundedStake)
+    {
+        refundedStake = 0;
+
+        if (!CanAcceptBets || betTemplate == null)
+            return false;
+
+        for (int i = activeBets.Count - 1; i >= 0; i--)
+        {
+            RouletteBet bet = activeBets[i];
+
+            if (!HasSameTarget(bet, betTemplate))
+                continue;
+
+            refundedStake = bet.Stake;
+            CurrentChips += refundedStake;
+            activeBets.RemoveAt(i);
+            return true;
+        }
+
+        return false;
+    }
+
     public void ApplyRoundResult(RoundResult roundResult)
     {
         if (roundResult == null)
@@ -115,5 +138,22 @@ public class RouletteGameState
         }
 
         activeBets.Clear();
+    }
+
+    private bool HasSameTarget(RouletteBet first, RouletteBet second)
+    {
+        if (first.Type != second.Type)
+            return false;
+
+        if (first.CoveredSlotIds.Count != second.CoveredSlotIds.Count)
+            return false;
+
+        for (int i = 0; i < first.CoveredSlotIds.Count; i++)
+        {
+            if (first.CoveredSlotIds[i] != second.CoveredSlotIds[i])
+                return false;
+        }
+
+        return true;
     }
 }
