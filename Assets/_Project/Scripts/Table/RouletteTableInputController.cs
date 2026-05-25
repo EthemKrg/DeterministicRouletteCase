@@ -10,6 +10,7 @@ public class RouletteTableInputController : MonoBehaviour
     [SerializeField] private ChipSelectionController chipSelectionController;
     [SerializeField] private RouletteTableHighlightController highlightController;
     [SerializeField] private ChipStackViewController chipStackViewController;
+    [SerializeField] private BalanceChipDisplayController balanceChipDisplayController;
 
     [Header("Raycast")]
     [SerializeField] private LayerMask betAreaLayerMask = ~0;
@@ -40,15 +41,21 @@ public class RouletteTableInputController : MonoBehaviour
 
     private void TryHandlePointerPress(Vector2 screenPosition)
     {
-        RouletteBetArea betArea = GetBetAreaAtScreenPosition(screenPosition);
+        if (!TryGetTableHit(screenPosition, out RaycastHit hit))
+            return;
 
+        ChipStackView stackView = hit.collider.GetComponentInParent<ChipStackView>();
+        if (stackView != null && chipStackViewController.TryUndoTopChip(stackView))
+            return;
+
+        RouletteBetArea betArea = hit.collider.GetComponentInParent<RouletteBetArea>();
         if (betArea == null)
             return;
 
-        TryPlaceBet(betArea);
+        TryPlaceBet(betArea, chipSelectionController.SelectedChip, chipSelectionController.SelectedChipValue);
     }
 
-    private void TryPlaceBet(RouletteBetArea betArea)
+    private void TryPlaceBet(RouletteBetArea betArea, ChipDenomination selectedChip, int stake)
     {
         if (gameFlowController.GameState.FlowState != GameFlowState.Betting)
             return;
@@ -59,17 +66,36 @@ public class RouletteTableInputController : MonoBehaviour
             return;
         }
 
+        bool reservedStackPosition = false;
+
         try
         {
-            int stake = chipSelectionController.SelectedChipValue;
             RouletteBet bet = betArea.CreateBet(stake, gameFlowController.GameState.WheelType);
+
+            if (balanceChipDisplayController != null)
+            {
+                Vector3 stackPosition = chipStackViewController.ReserveNextChipWorldPosition(betArea);
+                reservedStackPosition = true;
+                int stackVisualVersion = chipStackViewController.GetVisualVersion();
+                balanceChipDisplayController.SetNextBetChipTarget(
+                    selectedChip,
+                    stackPosition,
+                    () => chipStackViewController.ShowOrUpdateStack(betArea, selectedChip, bet.Stake, stackVisualVersion));
+            }
 
             gameFlowController.PlacePreparedBet(bet);
 
-            chipStackViewController.ShowOrUpdateStack(betArea, chipSelectionController.SelectedChip, bet.Stake);
+            if (balanceChipDisplayController == null)
+                chipStackViewController.ShowOrUpdateStack(betArea, selectedChip, bet.Stake);
         }
         catch (System.Exception exception)
         {
+            if (balanceChipDisplayController != null)
+                balanceChipDisplayController.ClearNextBetChipTarget();
+
+            if (reservedStackPosition)
+                chipStackViewController.CancelPendingChipReservation(betArea);
+
             gameFlowController.RequestFeedback(exception.Message);
         }
     }
@@ -116,11 +142,15 @@ public class RouletteTableInputController : MonoBehaviour
 
     private RouletteBetArea GetBetAreaAtScreenPosition(Vector2 screenPosition)
     {
-        Ray ray = rayCamera.ScreenPointToRay(screenPosition);
-
-        if (!Physics.Raycast(ray, out RaycastHit hit, rayDistance, betAreaLayerMask))
+        if (!TryGetTableHit(screenPosition, out RaycastHit hit))
             return null;
 
         return hit.collider.GetComponentInParent<RouletteBetArea>();
+    }
+
+    private bool TryGetTableHit(Vector2 screenPosition, out RaycastHit hit)
+    {
+        Ray ray = rayCamera.ScreenPointToRay(screenPosition);
+        return Physics.Raycast(ray, out hit, rayDistance, betAreaLayerMask);
     }
 }
