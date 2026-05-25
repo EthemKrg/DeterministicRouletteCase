@@ -2026,6 +2026,33 @@ MonoBehaviour:
   stackSpacing: {x: 0, y: 0, z: 0.045}
   stackRotation: {x: -40, y: 0, z: 0}
   chipScale: 0.75
+  betChipMoveDuration: 0.42
+  betChipArcHeight: 0.34
+  betChipTargetRotation: {x: 0, y: 0, z: 0}
+  betChipMoveCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!4 &149735907 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1106981751309330641, guid: e7bdf7bd904035140ab015fec49cebc9, type: 3}
@@ -3047,6 +3074,7 @@ MonoBehaviour:
   gameFlowController: {fileID: 1391496609}
   chipStackPrefab: {fileID: 2801400368653804244, guid: f5ed0622f02e3dd47a273e1dc7cc9b26, type: 3}
   chipVisualPool: {fileID: 1605834548}
+  balanceChipDisplayController: {fileID: 145742951}
   stackRoot: {fileID: 714594260}
   stackOffset: {x: -0.12, y: 0, z: -0.12}
 --- !u!1 &200760628 stripped
@@ -14514,6 +14542,7 @@ MonoBehaviour:
   chipSelectionController: {fileID: 1166810468}
   highlightController: {fileID: 916003448}
   chipStackViewController: {fileID: 194876332}
+  balanceChipDisplayController: {fileID: 145742951}
   betAreaLayerMask:
     serializedVersion: 2
     m_Bits: 64

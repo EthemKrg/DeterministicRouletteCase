@@ -7,6 +7,7 @@ public class ChipStackViewController : MonoBehaviour
     [SerializeField] private GameFlowController gameFlowController;
     [SerializeField] private ChipStackView chipStackPrefab;
     [SerializeField] private ChipVisualPool chipVisualPool;
+    [SerializeField] private BalanceChipDisplayController balanceChipDisplayController;
     [SerializeField] private Transform stackRoot;
 
     [Header("Placement")]
@@ -14,6 +15,8 @@ public class ChipStackViewController : MonoBehaviour
 
     private readonly Dictionary<RouletteBetArea, ChipStackView> stacksByArea = new Dictionary<RouletteBetArea, ChipStackView>();
     private readonly Dictionary<RouletteBetArea, int> stakesByArea = new Dictionary<RouletteBetArea, int>();
+
+    private int stackVisualVersion;
 
     private void Awake()
     {
@@ -40,6 +43,14 @@ public class ChipStackViewController : MonoBehaviour
 
     public void ShowOrUpdateStack(RouletteBetArea betArea, ChipDenomination denomination, int addedStake)
     {
+        ShowOrUpdateStack(betArea, denomination, addedStake, stackVisualVersion);
+    }
+
+    public void ShowOrUpdateStack(RouletteBetArea betArea, ChipDenomination denomination, int addedStake, int expectedVersion)
+    {
+        if (expectedVersion != stackVisualVersion)
+            return;
+
         if (betArea == null || addedStake <= 0)
             return;
 
@@ -52,8 +63,28 @@ public class ChipStackViewController : MonoBehaviour
         stackView.AddChip(denomination, stakesByArea[betArea]);
     }
 
+    public Vector3 GetStackPosition(RouletteBetArea betArea)
+    {
+        return betArea.transform.position + stackOffset;
+    }
+
+    public Vector3 GetNextChipWorldPosition(RouletteBetArea betArea)
+    {
+        if (stacksByArea.TryGetValue(betArea, out ChipStackView stackView) && stackView != null)
+            return stackView.GetNextChipWorldPosition();
+
+        return GetStackPosition(betArea);
+    }
+
+    public int GetVisualVersion()
+    {
+        return stackVisualVersion;
+    }
+
     public void ClearAll()
     {
+        stackVisualVersion++;
+
         foreach (ChipStackView stackView in stacksByArea.Values)
         {
             if (stackView == null)
@@ -76,7 +107,7 @@ public class ChipStackViewController : MonoBehaviour
 
         ChipStackView stackView = Instantiate(
             chipStackPrefab,
-            betArea.transform.position + stackOffset,
+            GetStackPosition(betArea),
             Quaternion.identity,
             root);
 
@@ -94,6 +125,26 @@ public class ChipStackViewController : MonoBehaviour
 
     private void HandleBetsCleared()
     {
+        if (balanceChipDisplayController != null)
+        {
+            stackVisualVersion++;
+            List<ChipStackView.ReturnChip> returnChips = new List<ChipStackView.ReturnChip>();
+
+            foreach (ChipStackView stackView in stacksByArea.Values)
+            {
+                if (stackView == null)
+                    continue;
+
+                returnChips.AddRange(stackView.TakeChipsForReturn());
+                Destroy(stackView.gameObject);
+            }
+
+            stacksByArea.Clear();
+            stakesByArea.Clear();
+            balanceChipDisplayController.ReturnChipsToBalance(returnChips);
+            return;
+        }
+
         ClearAll();
     }
 
