@@ -19,11 +19,13 @@ Unity 6000.4.4f1
 
 1. Select a chip value.
 2. Place bets on the 3D roulette table.
-3. Select the next winning number from the UI.
+3. Optionally select the next winning number from the UI.
 4. Spin the round.
 5. The result is resolved and chips/statistics are updated.
 
-If no result is selected, random result selection is planned but not added yet.
+If no result is selected, the game picks a random result for the active roulette type.
+
+Placed chip stacks can be tapped to undo the top chip from that bet.
 
 ## Current State
 
@@ -36,7 +38,11 @@ Implemented so far:
 - Bet limits
 - Chip denomination selection
 - Deterministic result selection
-- Runtime win/loss and profit/loss stats
+- Random result fallback when no result is selected
+- Chip stack visuals for placed bets
+- Tap-to-undo for placed chip stacks
+- Runtime win/loss, profit/loss, total wagered and best win stats
+- Separate statistics for European and American roulette
 - Full bet logic for:
   - Straight
   - Split
@@ -73,10 +79,10 @@ The debug UI is still used for testing.
 It supports:
 
 - Selecting European or American roulette
-- Setting the next winning number
+- Setting the next winning number, or leaving it empty for a random result
 - Spinning the round
 - Clearing active bets
-- Viewing chips, active bets, statistics and last round result
+- Viewing chips, active bets, overall statistics, current roulette type statistics and last round result
 
 Final betting should happen on the 3D table, not through debug bet buttons.
 
@@ -113,7 +119,6 @@ Main scripts:
 - `StatisticsTracker`: tracks player stats.
 - `RouletteBetArea`: stores data for one table bet area.
 - `RouletteTableInputController`: reads pointer input and places table bets.
-- `RouletteTableHighlightController`: handles hover preview and winning marker.
 - `ChipSelectionController`: stores the selected chip value.
 
 Patterns used:
@@ -135,11 +140,8 @@ Patterns used:
 
 Next work:
 
-- Add chip visuals on placed bets
-- Add round history
 - Add 3D wheel spin animation
 - Add ball drop / landing animation
-- Add random result fallback
 - Add American five-number bet
 - Add save/load
 - Add auto-save and resume
@@ -152,9 +154,7 @@ Next work:
 ## Known Issues
 
 - Wheel and ball animations are not implemented yet.
-- Random result fallback is not implemented yet.
 - Save/load is not implemented yet.
-- Chip stack visuals are not implemented yet.
 - Audio and VFX are not implemented yet.
 - UI is still partly debug focused.
 - Some table bet areas need visual cleanup.
