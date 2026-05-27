@@ -119,7 +119,7 @@ public class TableLineAutoGenerator : MonoBehaviour
 
         CreateBorderLine(generatedRoot, totalBounds, fallbackMaterial);
 
-        Debug.Log($"{nameof(TableLineAutoGenerator)} generated {lineIndex + 1} table lines from {usedRendererCount} renderers.", this);
+        //Debug.Log($"{nameof(TableLineAutoGenerator)} generated {lineIndex + 1} table lines from {usedRendererCount} renderers.", this);
     }
 
     private void SubscribeToGameFlowController()
