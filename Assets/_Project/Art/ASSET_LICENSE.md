@@ -2,7 +2,9 @@
 
 Copyright (c) 2026 Project Owner. All rights reserved.
 
-This license applies to the generated roulette table asset package in this directory, including the `.blend`, `.fbx`, `.obj`, `.mtl`, `.png`, texture, preview, and manifest files.
+This license applies to the generated roulette table asset package in this directory, including the `.blend`, `.fbx`, `.obj`, `.mtl`, `.png`, texture, preview, material, and manifest files.
+
+It also covers project-created casino floor and carpet texture assets under `Textures/`, plus their matching Unity materials under `Materials/`.
 
 ## Permitted Use
 
@@ -22,7 +24,7 @@ Attribution is not required in the final game/application unless the project own
 
 ## Third-Party Materials
 
-No third-party model, texture, or image assets were intentionally included. The package was generated procedurally with Blender and custom script logic. Blender itself remains governed by its own license and is not included in this asset license.
+No third-party model, texture, or image assets were intentionally included. The roulette table package was generated procedurally with Blender and custom script logic. The casino floor/carpet textures were created for this project as original stylized texture assets. Blender itself remains governed by its own license and is not included in this asset license.
 
 ## Warranty
 
