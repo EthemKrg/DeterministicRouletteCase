@@ -10,6 +10,9 @@ public class RouletteTableHighlightController : MonoBehaviour
     [Header("Hover")]
     [SerializeField] private Material highlightMaterial;
 
+    [Header("Table Button Hover")]
+    [SerializeField] private Material tableButtonHighlightMaterial;
+
     [Header("Winning Marker")]
     [SerializeField] private GameObject winningMarkerPrefab;
     [SerializeField] private Transform winningMarkerRoot;
@@ -19,6 +22,7 @@ public class RouletteTableHighlightController : MonoBehaviour
     private readonly List<RouletteNumberArea> highlightedAreas = new List<RouletteNumberArea>();
 
     private RouletteBetArea highlightedBetArea;
+    private TableGameControls3DButton highlightedTableButton;
     private GameObject winningMarkerInstance;
 
     private void Awake()
@@ -69,6 +73,8 @@ public class RouletteTableHighlightController : MonoBehaviour
             highlightedBetArea.ClearHighlight();
             highlightedBetArea = null;
         }
+
+        ClearTableButtonHighlight();
     }
 
     public void RefreshNumberAreas()
@@ -164,5 +170,24 @@ public class RouletteTableHighlightController : MonoBehaviour
 
         foreach (Collider collider in colliders)
             collider.enabled = false;
+    }
+
+    public void HighlightTableButton(TableGameControls3DButton button)
+    {
+        ClearTableButtonHighlight();
+
+        highlightedTableButton = button;
+
+        if (highlightedTableButton != null)
+            highlightedTableButton.SetHighlight(tableButtonHighlightMaterial);
+    }
+
+    public void ClearTableButtonHighlight()
+    {
+        if (highlightedTableButton != null)
+        {
+            highlightedTableButton.ClearHighlight();
+            highlightedTableButton = null;
+        }
     }
 }

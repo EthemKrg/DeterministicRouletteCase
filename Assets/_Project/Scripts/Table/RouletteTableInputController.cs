@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 public class RouletteTableInputController : MonoBehaviour
@@ -14,6 +15,7 @@ public class RouletteTableInputController : MonoBehaviour
 
     [Header("Raycast")]
     [SerializeField] private LayerMask betAreaLayerMask = ~0;
+    [SerializeField] private LayerMask tableControlLayerMask = 1 << 7;
     [SerializeField] private float rayDistance = 100f;
 
     private RouletteBetArea hoveredBetArea;
@@ -29,18 +31,23 @@ public class RouletteTableInputController : MonoBehaviour
 
         if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
         {
-            TryHandlePointerPress(Mouse.current.position.ReadValue());
+            TryHandlePointerPress(Mouse.current.position.ReadValue(), -1);
             return;
         }
 
         if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.wasPressedThisFrame)
         {
-            TryHandlePointerPress(Touchscreen.current.primaryTouch.position.ReadValue());
+            TryHandlePointerPress(
+                Touchscreen.current.primaryTouch.position.ReadValue(),
+                Touchscreen.current.primaryTouch.touchId.ReadValue());
         }
     }
 
-    private void TryHandlePointerPress(Vector2 screenPosition)
+    private void TryHandlePointerPress(Vector2 screenPosition, int pointerId)
     {
+        if (IsPointerBlockedByUi(pointerId) || IsPointerBlockedByTableControl(screenPosition))
+            return;
+
         if (!TryGetTableHit(screenPosition, out RaycastHit hit))
             return;
 
@@ -142,10 +149,37 @@ public class RouletteTableInputController : MonoBehaviour
 
     private RouletteBetArea GetBetAreaAtScreenPosition(Vector2 screenPosition)
     {
+        if (IsPointerBlockedByUi(-1) || IsPointerBlockedByTableControl(screenPosition))
+            return null;
+
         if (!TryGetTableHit(screenPosition, out RaycastHit hit))
             return null;
 
         return hit.collider.GetComponentInParent<RouletteBetArea>();
+    }
+
+    private bool IsPointerBlockedByUi(int pointerId)
+    {
+        if (EventSystem.current == null)
+            return false;
+
+        if (pointerId < 0)
+            return EventSystem.current.IsPointerOverGameObject();
+
+        return EventSystem.current.IsPointerOverGameObject(pointerId);
+    }
+
+    private bool IsPointerBlockedByTableControl(Vector2 screenPosition)
+    {
+        if (rayCamera == null)
+            return false;
+
+        Ray ray = rayCamera.ScreenPointToRay(screenPosition);
+
+        if (!Physics.Raycast(ray, out RaycastHit hit, rayDistance, tableControlLayerMask, QueryTriggerInteraction.Ignore))
+            return false;
+
+        return hit.collider.GetComponentInParent<TableGameControls3DButton>() != null;
     }
 
     private bool TryGetTableHit(Vector2 screenPosition, out RaycastHit hit)
