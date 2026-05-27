@@ -62,7 +62,7 @@ public class TableGameControls3DInputController : MonoBehaviour
     {
         TableGameControls3DButton button = GetButtonAtScreenPosition(screenPosition);
 
-        if (button == null)
+        if (button == null || button.Action == TableGameControls3DButton.ControlAction.None)
             return;
 
         controlsView.HandleButtonPressed(button);

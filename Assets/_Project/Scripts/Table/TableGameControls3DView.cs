@@ -29,6 +29,7 @@ public class TableGameControls3DView : MonoBehaviour
 
     private void Start()
     {
+        winningSlotInput.text = string.Empty;
         RefreshControls();
     }
 
@@ -41,6 +42,9 @@ public class TableGameControls3DView : MonoBehaviour
 
         switch (button.Action)
         {
+            case TableGameControls3DButton.ControlAction.None:
+                return;
+
             case TableGameControls3DButton.ControlAction.Spin:
                 Spin();
                 break;
@@ -111,7 +115,6 @@ public class TableGameControls3DView : MonoBehaviour
         bool isBettingState = state.FlowState == GameFlowState.Betting;
         bool hasActiveBets = state.ActiveBets.Count > 0;
         bool isWinningSlotValid = IsOptionalResultSlotValid(GetWinningSlotId());
-        bool isAmerican = state.WheelType == RouletteWheelType.American;
 
         winningSlotInput.interactable = isBettingState;
 
@@ -123,17 +126,14 @@ public class TableGameControls3DView : MonoBehaviour
             switch (button.Action)
             {
                 case TableGameControls3DButton.ControlAction.Spin:
-                    button.SetLabel("SPIN");
                     button.SetState(isBettingState && hasActiveBets && isWinningSlotValid);
                     break;
 
                 case TableGameControls3DButton.ControlAction.ClearBets:
-                    button.SetLabel("CLEAR");
                     button.SetState(isBettingState && hasActiveBets);
                     break;
 
                 case TableGameControls3DButton.ControlAction.ToggleWheelType:
-                    button.SetLabel(isAmerican ? "US" : "EU");
                     button.SetState(isBettingState);
                     break;
             }
