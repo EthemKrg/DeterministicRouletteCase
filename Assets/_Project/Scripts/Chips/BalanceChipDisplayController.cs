@@ -108,7 +108,7 @@ public class BalanceChipDisplayController : MonoBehaviour
         int currentChips = gameFlowController.GameState.CurrentChips;
 
         if (balanceText != null)
-            balanceText.text = $"Current Balance:\n {currentChips}";
+            balanceText.text = $" Balance:\n {currentChips}";
 
         int targetActiveChips = Mathf.Max(0, currentChips - GetReturningChipTotal());
 
