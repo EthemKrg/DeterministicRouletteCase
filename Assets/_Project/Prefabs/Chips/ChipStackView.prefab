@@ -47,9 +47,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ChipStackView
   chipRoot: {fileID: 609523369178664084}
   totalStakeLabel: {fileID: 4515732731502047598}
-  totalStakeLabelRoot: {fileID: 609523369178664084}
   chipStackOffset: {x: 0, y: 0.05, z: 0}
-  labelBaseOffset: {x: 0, y: 0.08, z: 0}
+  hitBoxSize: {x: 0.35, y: 0.18, z: 0.35}
 --- !u!1 &5342661595631707073
 GameObject:
   m_ObjectHideFlags: 0
@@ -183,12 +182,12 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 1.8
-  m_fontSizeBase: 1.8
+  m_fontSize: 1.7
+  m_fontSizeBase: 1.7
   m_fontWeight: 400
   m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_fontSizeMin: 1
+  m_fontSizeMax: 1.8
   m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512

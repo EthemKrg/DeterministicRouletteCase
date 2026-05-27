@@ -30,7 +30,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6748230445107897818}
+  - {fileID: 8122176208241680583}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &7799035220365366637
@@ -45,8 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c8309b22563cd614999b2b38cf8882cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ChipVisual
-  targetRenderer: {fileID: 1630571000581053332}
-  valueLabel: {fileID: 0}
+  targetRenderer: {fileID: 2541627843373967481}
   chipMaterials:
   - denomination: 250
     material: {fileID: 2100000, guid: 09b3164497507074b8df5fb7f2f038ba, type: 2}
@@ -58,7 +57,7 @@ MonoBehaviour:
     material: {fileID: 2100000, guid: 5ec32e9177111a84abab7222481240c4, type: 2}
   - denomination: 5000
     material: {fileID: 2100000, guid: db2fca64d8f3e3642aeb81ab73d0ca4e, type: 2}
---- !u!1 &7615292884853594398
+--- !u!1 &6891165142382149083
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -66,10 +65,10 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 6748230445107897818}
-  - component: {fileID: 1275963957480346548}
-  - component: {fileID: 1630571000581053332}
-  - component: {fileID: 3328694205345713983}
+  - component: {fileID: 8122176208241680583}
+  - component: {fileID: 2486497364955443843}
+  - component: {fileID: 2541627843373967481}
+  - component: {fileID: 2242940623762826960}
   m_Layer: 0
   m_Name: Chip mesh
   m_TagString: Untagged
@@ -77,36 +76,36 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &6748230445107897818
+--- !u!4 &8122176208241680583
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7615292884853594398}
+  m_GameObject: {fileID: 6891165142382149083}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.1, z: 0}
-  m_LocalScale: {x: 0.5, y: 0.02, z: 0.5}
+  m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0.1, z: -0}
+  m_LocalScale: {x: 2.3523, y: 2.3523, z: 2.3523}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 609523369178664084}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &1275963957480346548
+  m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
+--- !u!33 &2486497364955443843
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7615292884853594398}
-  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
---- !u!23 &1630571000581053332
+  m_GameObject: {fileID: 6891165142382149083}
+  m_Mesh: {fileID: 4300000, guid: e56a50b760b3f6e4b8598a9065c0c71a, type: 2}
+--- !u!23 &2541627843373967481
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7615292884853594398}
+  m_GameObject: {fileID: 6891165142382149083}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -125,7 +124,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 251c2f01ee21d9d41a0ef81090c20c78, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -149,13 +148,13 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &3328694205345713983
+--- !u!65 &2242940623762826960
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7615292884853594398}
+  m_GameObject: {fileID: 6891165142382149083}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -168,5 +167,5 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.0000001, y: 2, z: 1.0000002}
+  m_Size: {x: 0.21, y: 0.21000004, z: 0.028000008}
   m_Center: {x: 0, y: 0, z: 0}
