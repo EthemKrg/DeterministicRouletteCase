@@ -136,6 +136,12 @@ Patterns used:
 - Unity UI is allowed.
 - External art/audio assets can be used if the license allows it.
 
+## Asset Optimization Notes
+
+The table and wheel have a lot of small number labels. Keeping them as imported mesh text was overkill, so the plan is to use TextMeshPro for the labels and bake them down into a few combined meshes.
+
+That keeps the numbers readable without carrying hundreds of tiny text meshes at runtime.
+
 ## Planned Work
 
 Next work:
