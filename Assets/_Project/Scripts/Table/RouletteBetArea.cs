@@ -10,9 +10,18 @@ public class RouletteBetArea : MonoBehaviour
     [SerializeField] private int secondaryNumber;
     [SerializeField] private int index;
     [SerializeField] private bool americanOnly;
+    [SerializeField] private Renderer targetRenderer;
+
+    private Material normalMaterial;
 
     public BetType BetType => betType;
     public bool AmericanOnly => americanOnly;
+
+    private void Awake()
+    {
+        CacheRenderer();
+        CacheNormalMaterial();
+    }
 
     public RouletteBet CreateBet(int stake, RouletteWheelType wheelType)
     {
@@ -82,11 +91,50 @@ public class RouletteBetArea : MonoBehaviour
         return previewBet.CoveredSlotIds;
     }
 
+    public void SetHighlight(Material highlightMaterial)
+    {
+        if (highlightMaterial == null)
+            return;
+
+        CacheRenderer();
+
+        if (targetRenderer == null)
+            return;
+
+        targetRenderer.sharedMaterial = highlightMaterial;
+    }
+
+    public void ClearHighlight()
+    {
+        CacheRenderer();
+
+        if (targetRenderer == null || normalMaterial == null)
+            return;
+
+        targetRenderer.sharedMaterial = normalMaterial;
+    }
+
     private string GetStraightSlotId()
     {
         if (!string.IsNullOrWhiteSpace(straightSlotId))
             return straightSlotId.Trim();
 
         return primaryNumber.ToString();
+    }
+
+    private void CacheRenderer()
+    {
+        if (targetRenderer != null)
+            return;
+
+        targetRenderer = GetComponent<Renderer>();
+    }
+
+    private void CacheNormalMaterial()
+    {
+        if (targetRenderer == null)
+            return;
+
+        normalMaterial = targetRenderer.sharedMaterial;
     }
 }

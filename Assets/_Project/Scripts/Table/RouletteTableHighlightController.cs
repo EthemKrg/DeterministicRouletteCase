@@ -18,6 +18,7 @@ public class RouletteTableHighlightController : MonoBehaviour
     private readonly Dictionary<string, RouletteNumberArea> numberAreasBySlotId = new Dictionary<string, RouletteNumberArea>();
     private readonly List<RouletteNumberArea> highlightedAreas = new List<RouletteNumberArea>();
 
+    private RouletteBetArea highlightedBetArea;
     private GameObject winningMarkerInstance;
 
     private void Awake()
@@ -41,7 +42,42 @@ public class RouletteTableHighlightController : MonoBehaviour
     public void HighlightSlots(IReadOnlyList<string> slotIds)
     {
         ClearHighlight();
+        HighlightNumberAreas(slotIds);
+    }
 
+    public void HighlightBetArea(RouletteBetArea betArea, IReadOnlyList<string> slotIds)
+    {
+        ClearHighlight();
+
+        highlightedBetArea = betArea;
+
+        if (highlightedBetArea != null)
+            highlightedBetArea.SetHighlight(highlightMaterial);
+
+        HighlightNumberAreas(slotIds);
+    }
+
+    public void ClearHighlight()
+    {
+        foreach (RouletteNumberArea numberArea in highlightedAreas)
+            numberArea.ClearHighlight();
+
+        highlightedAreas.Clear();
+
+        if (highlightedBetArea != null)
+        {
+            highlightedBetArea.ClearHighlight();
+            highlightedBetArea = null;
+        }
+    }
+
+    public void RefreshNumberAreas()
+    {
+        CacheNumberAreas();
+    }
+
+    private void HighlightNumberAreas(IReadOnlyList<string> slotIds)
+    {
         if (slotIds == null)
             return;
 
@@ -53,19 +89,6 @@ public class RouletteTableHighlightController : MonoBehaviour
             numberArea.SetHighlight(highlightMaterial);
             highlightedAreas.Add(numberArea);
         }
-    }
-
-    public void ClearHighlight()
-    {
-        foreach (RouletteNumberArea numberArea in highlightedAreas)
-            numberArea.ClearHighlight();
-
-        highlightedAreas.Clear();
-    }
-
-    public void RefreshNumberAreas()
-    {
-        CacheNumberAreas();
     }
 
     public void ShowWinningMarker(string slotId)

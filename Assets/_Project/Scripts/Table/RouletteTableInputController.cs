@@ -137,7 +137,7 @@ public class RouletteTableInputController : MonoBehaviour
         }
 
         IReadOnlyList<string> previewSlotIds = hoveredBetArea.GetPreviewSlotIds(gameFlowController.GameState.WheelType);
-        highlightController.HighlightSlots(previewSlotIds);
+        highlightController.HighlightBetArea(hoveredBetArea, previewSlotIds);
     }
 
     private RouletteBetArea GetBetAreaAtScreenPosition(Vector2 screenPosition)
