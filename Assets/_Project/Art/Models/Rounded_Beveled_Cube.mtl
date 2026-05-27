@@ -1,9 +1,0 @@
-# Rounded beveled cube material
-newmtl M_Rounded_Beveled_Cube
-Kd 0.86 0.84 0.78
-Ka 0.86 0.84 0.78
-Ks 0.12 0.12 0.12
-Ns 70
-Ni 1.45
-d 1
-illum 2
