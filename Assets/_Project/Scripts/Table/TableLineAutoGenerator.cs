@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -5,6 +6,7 @@ using UnityEngine;
 public class TableLineAutoGenerator : MonoBehaviour
 {
     [Header("Source")]
+    [SerializeField] private GameFlowController gameFlowController;
     [SerializeField] private Transform sourceRoot;
     [SerializeField] private Material lineMaterial;
 
@@ -21,6 +23,38 @@ public class TableLineAutoGenerator : MonoBehaviour
 
     private const string GeneratedRootName = "Generated Table Lines";
     private const float MinSegmentLength = 0.001f;
+
+    private RouletteWheelType lastWheelType;
+    private bool hasLastWheelType;
+    private bool isSubscribed;
+    private Coroutine pendingModeChangeRebuild;
+
+    private void OnEnable()
+    {
+        SubscribeToGameFlowController();
+        CacheCurrentWheelType();
+    }
+
+    private void Start()
+    {
+        SubscribeToGameFlowController();
+        CacheCurrentWheelType();
+        GenerateLinesFromSource();
+    }
+
+    private void OnDisable()
+    {
+        if (isSubscribed && gameFlowController != null)
+            gameFlowController.OnGameStateChanged -= HandleGameStateChanged;
+
+        isSubscribed = false;
+
+        if (pendingModeChangeRebuild != null)
+        {
+            StopCoroutine(pendingModeChangeRebuild);
+            pendingModeChangeRebuild = null;
+        }
+    }
 
     [ContextMenu("Generate Lines From Source")]
     public void GenerateLinesFromSource()
@@ -86,6 +120,57 @@ public class TableLineAutoGenerator : MonoBehaviour
         CreateBorderLine(generatedRoot, totalBounds, fallbackMaterial);
 
         Debug.Log($"{nameof(TableLineAutoGenerator)} generated {lineIndex + 1} table lines from {usedRendererCount} renderers.", this);
+    }
+
+    private void SubscribeToGameFlowController()
+    {
+        if (isSubscribed)
+            return;
+
+        if (gameFlowController == null)
+            return;
+
+        gameFlowController.OnGameStateChanged += HandleGameStateChanged;
+        isSubscribed = true;
+    }
+
+    private void CacheCurrentWheelType()
+    {
+        if (gameFlowController == null || gameFlowController.GameState == null)
+            return;
+
+        lastWheelType = gameFlowController.GameState.WheelType;
+        hasLastWheelType = true;
+    }
+
+    private void HandleGameStateChanged()
+    {
+        if (gameFlowController == null || gameFlowController.GameState == null)
+            return;
+
+        RouletteWheelType wheelType = gameFlowController.GameState.WheelType;
+
+        if (!hasLastWheelType)
+        {
+            lastWheelType = wheelType;
+            hasLastWheelType = true;
+            return;
+        }
+
+        if (lastWheelType == wheelType)
+            return;
+
+        lastWheelType = wheelType;
+
+        if (pendingModeChangeRebuild == null)
+            pendingModeChangeRebuild = StartCoroutine(RebuildLinesAfterModeVisibilityRefresh());
+    }
+
+    private IEnumerator RebuildLinesAfterModeVisibilityRefresh()
+    {
+        yield return new WaitForEndOfFrame();
+        pendingModeChangeRebuild = null;
+        GenerateLinesFromSource();
     }
 
     [ContextMenu("Clear Generated Lines")]

@@ -8,8 +8,6 @@ public class RouletteTableModeVisibilityController : MonoBehaviour
     [SerializeField] private TableLineAutoGenerator[] tableLineGenerators;
 
     private RouletteBetArea[] betAreas;
-    private RouletteWheelType lastWheelType;
-    private bool hasLastWheelType;
 
     private void Awake()
     {
@@ -45,7 +43,6 @@ public class RouletteTableModeVisibilityController : MonoBehaviour
 
         RouletteWheelType wheelType = gameFlowController.GameState.WheelType;
         bool isAmerican = wheelType == RouletteWheelType.American;
-        bool wheelTypeChanged = !hasLastWheelType || lastWheelType != wheelType;
 
         foreach (RouletteBetArea betArea in betAreas)
         {
@@ -54,12 +51,6 @@ public class RouletteTableModeVisibilityController : MonoBehaviour
 
             SetAreaVisible(betArea.gameObject, isAmerican);
         }
-
-        if (wheelTypeChanged)
-            RebuildTableLines();
-
-        lastWheelType = wheelType;
-        hasLastWheelType = true;
     }
 
     private void CacheBetAreas()
