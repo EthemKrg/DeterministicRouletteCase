@@ -68,6 +68,8 @@ public class BalanceChipDisplayController : MonoBehaviour
     [SerializeField] private Vector3 stackSpacing = new Vector3(0f, 0f, 0.38f);
     [SerializeField] private Vector3 stackRotation = new Vector3(-60f, 0f, 0f);
     [SerializeField] private float chipScale = 0.75f;
+    [SerializeField] private int maxChipsPerRow = 20;
+    [SerializeField] private float rowOffsetX = 0.5f;
 
     [Header("Animation")]
     [SerializeField] private float betChipMoveDuration = 0.42f;
@@ -173,10 +175,12 @@ public class BalanceChipDisplayController : MonoBehaviour
             chip.transform.SetParent(displayRoot, true);
             DisplayedChip returningChip = new DisplayedChip(returnChips[i].Denomination, chip);
 
-            int landingIndex = GetReturnLandingIndex(returningChip.Denomination);
+            int maxChipCount = maxChipsPerRow * 2;
+            int landingIndex = Mathf.Min(GetReturnLandingIndex(returningChip.Denomination), maxChipCount - 1);
             returningChips.Add(returningChip);
 
-            Vector3 targetPosition = stackSpacing * landingIndex;
+            int totalAfterReturn = Mathf.Min(activeChips.Count + returningChips.Count, maxChipCount);
+            Vector3 targetPosition = GetChipLayoutPosition(landingIndex, totalAfterReturn);
             Quaternion targetRotation = Quaternion.Euler(stackRotation);
             Vector3 targetScale = Vector3.one * chipScale;
 
@@ -517,15 +521,35 @@ public class BalanceChipDisplayController : MonoBehaviour
 
     private void LayoutChips()
     {
-        for (int i = 0; i < activeChips.Count; i++)
+        int visibleCount = Mathf.Min(activeChips.Count, maxChipsPerRow * 2);
+
+        for (int i = 0; i < visibleCount; i++)
         {
             Transform chipTransform = activeChips[i].Visual.transform;
+            chipTransform.gameObject.SetActive(true);
             ApplyChipTransform(
                 chipTransform,
-                stackSpacing * i,
+                GetChipLayoutPosition(i, visibleCount),
                 Quaternion.Euler(stackRotation),
                 Vector3.one * chipScale);
         }
+
+        for (int i = visibleCount; i < activeChips.Count; i++)
+            activeChips[i].Visual.gameObject.SetActive(false);
+    }
+
+    private Vector3 GetChipLayoutPosition(int index, int totalCount)
+    {
+        int count = Mathf.Min(totalCount, maxChipsPerRow * 2);
+        int localIndex = index % maxChipsPerRow;
+        int rowIndex = index / maxChipsPerRow;
+        int rowCount = Mathf.Min((count + maxChipsPerRow - 1) / maxChipsPerRow, 2);
+        float xCenter = rowCount == 2 ? rowOffsetX * 0.5f : 0f;
+
+        return new Vector3(
+            rowIndex * rowOffsetX - xCenter,
+            0f,
+            localIndex * stackSpacing.z);
     }
 
     private IEnumerator FlyChipToBet(ChipVisual chip, Vector3 targetPosition, Action onArrived)
