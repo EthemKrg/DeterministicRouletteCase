@@ -47,7 +47,9 @@ public class ChipStackView : MonoBehaviour
         if (chipPool == null)
             throw new System.InvalidOperationException($"{nameof(ChipStackView)} is missing ChipVisualPool.");
 
-        Transform root = chipRoot != null ? chipRoot : transform;
+        SanitizeChips();
+
+        Transform root = GetChipRoot();
 
         ChipVisual chip = chipPool.Get(root);
         chip.Setup(denomination);
@@ -76,6 +78,8 @@ public class ChipStackView : MonoBehaviour
     {
         chip = default;
 
+        SanitizeChips();
+
         if (!TryPeekTopChip(out chip))
             return false;
 
@@ -91,6 +95,8 @@ public class ChipStackView : MonoBehaviour
     {
         chip = default;
 
+        SanitizeChips();
+
         if (chips.Count == 0)
             return false;
 
@@ -100,6 +106,8 @@ public class ChipStackView : MonoBehaviour
 
     public List<ReturnChip> TakeChipsForReturn()
     {
+        SanitizeChips();
+
         List<ReturnChip> returnChips = new List<ReturnChip>(chips);
 
         for (int i = 0; i < returnChips.Count; i++)
@@ -120,6 +128,8 @@ public class ChipStackView : MonoBehaviour
 
     public void Clear()
     {
+        SanitizeChips();
+
         if (chipPool != null)
         {
             for (int i = chips.Count - 1; i >= 0; i--)
@@ -138,6 +148,8 @@ public class ChipStackView : MonoBehaviour
 
     public void RefreshStakeLabel(int totalStake)
     {
+        SanitizeChips();
+
         SetTotalStake(totalStake);
 
         if (totalStakeLabel == null)
@@ -158,6 +170,46 @@ public class ChipStackView : MonoBehaviour
             hitCollider = gameObject.AddComponent<BoxCollider>();
 
         hitCollider.isTrigger = true;
+    }
+
+    private void SanitizeChips()
+    {
+        if (chips.Count == 0)
+            return;
+
+        bool changed = false;
+        Transform root = GetChipRoot();
+        HashSet<ChipVisual> seenChips = new HashSet<ChipVisual>();
+
+        for (int i = chips.Count - 1; i >= 0; i--)
+        {
+            ChipVisual visual = chips[i].Visual;
+
+            if (visual == null || visual.transform == null || !visual.transform.IsChildOf(root) || !seenChips.Add(visual))
+            {
+                chips.RemoveAt(i);
+                changed = true;
+            }
+        }
+
+        if (!changed)
+            return;
+
+        RefreshHitCollider();
+
+        if (chips.Count == 0)
+        {
+            ClearStakeLabel();
+            return;
+        }
+
+        if (totalStakeLabel != null)
+            totalStakeLabel.transform.localPosition = defaultTotalStakeLabelLocalPos + chipStackOffset * (chips.Count - 1);
+    }
+
+    private Transform GetChipRoot()
+    {
+        return chipRoot != null ? chipRoot : transform;
     }
 
     private void RefreshHitCollider()

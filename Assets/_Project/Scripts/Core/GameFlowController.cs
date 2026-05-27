@@ -140,8 +140,14 @@ public class GameFlowController : MonoBehaviour
 
     public void ClearBets()
     {
+        bool hadActiveBets = GameState.ActiveBets.Count > 0;
+
         GameState.ClearBets();
         OnBetsCleared?.Invoke();
+
+        if (hadActiveBets)
+            OnFeedbackRequested?.Invoke("Bets cleared.");
+
         NotifyStateChanged();
     }
 
