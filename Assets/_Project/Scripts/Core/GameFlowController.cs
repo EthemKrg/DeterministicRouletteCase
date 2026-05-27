@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 public class GameFlowController : MonoBehaviour
@@ -12,6 +13,9 @@ public class GameFlowController : MonoBehaviour
     public event Action<string> OnFeedbackRequested;
     public event Action OnBetsCleared;
 
+    [Header("Wheel Animation")]
+    [SerializeField] private RouletteWheelSpinAnimator wheelAnimator;
+
     private void Awake()
     {
         GameState = new RouletteGameState();
@@ -20,12 +24,25 @@ public class GameFlowController : MonoBehaviour
         NotifyStateChanged();
     }
 
+    private void OnDestroy()
+    {
+        StopAllCoroutines();
+
+        if (GameState != null && GameState.FlowState == GameFlowState.Spinning)
+        {
+            GameState.SetFlowState(GameFlowState.Betting);
+        }
+    }
+
     public void SetWheelType(RouletteWheelType wheelType)
     {
         bool changed = GameState.SetWheelType(wheelType);
 
         if (changed)
         {
+            if (wheelAnimator != null)
+                wheelAnimator.SetWheelType(wheelType);
+
             OnBetsCleared?.Invoke();
             OnFeedbackRequested?.Invoke("Wheel type changed. Active bets were cleared.");
         }
@@ -114,8 +131,16 @@ public class GameFlowController : MonoBehaviour
         GameState.SetFlowState(GameFlowState.Spinning);
         NotifyStateChanged();
 
-        // Later this will wait for wheel animation.
+        StartCoroutine(SpinRoutine(winningSlot));
+    }
+
+    private IEnumerator SpinRoutine(RouletteSlot winningSlot)
+    {
+        if (wheelAnimator != null)
+            yield return wheelAnimator.AnimateSpin(winningSlot);
+
         GameState.SetFlowState(GameFlowState.Resolving);
+        NotifyStateChanged();
 
         LastRoundResult = BetResolver.Resolve(winningSlot, GameState.ActiveBets);
 
