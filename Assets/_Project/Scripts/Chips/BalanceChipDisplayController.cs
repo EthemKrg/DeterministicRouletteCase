@@ -6,6 +6,9 @@ using UnityEngine;
 
 public class BalanceChipDisplayController : MonoBehaviour
 {
+    private const int CompactTriggerChipCount = 10;
+    private const int CompactBatchChipCount = 5;
+
     private class DisplayedChip
     {
         public readonly ChipDenomination Denomination;
@@ -127,6 +130,7 @@ public class BalanceChipDisplayController : MonoBehaviour
             return;
         }
 
+        CompactChipsIfNeeded();
         SortAndLayoutChips();
     }
 
@@ -584,7 +588,57 @@ public class BalanceChipDisplayController : MonoBehaviour
         returningChips.Remove(chip);
         activeChips.Add(chip);
         activeReturnAnimations--;
+
+        if (activeReturnAnimations == 0)
+            CompactChipsIfNeeded();
+
         SortAndLayoutChips();
+    }
+
+    private void CompactChipsIfNeeded()
+    {
+        while (TryGetCompactDenomination(out ChipDenomination denomination))
+            CompactChipBatch(denomination);
+    }
+
+    private bool TryGetCompactDenomination(out ChipDenomination denomination)
+    {
+        for (int i = 1; i < DisplayOrder.Length; i++)
+        {
+            int count = 0;
+            denomination = DisplayOrder[i];
+
+            for (int j = 0; j < activeChips.Count; j++)
+            {
+                if (activeChips[j].Denomination != denomination)
+                    continue;
+
+                count++;
+
+                if (count >= CompactTriggerChipCount)
+                    return true;
+            }
+        }
+
+        denomination = default;
+        return false;
+    }
+
+    private void CompactChipBatch(ChipDenomination denomination)
+    {
+        int removedCount = 0;
+
+        for (int i = activeChips.Count - 1; i >= 0 && removedCount < CompactBatchChipCount; i--)
+        {
+            if (activeChips[i].Denomination != denomination)
+                continue;
+
+            chipVisualPool.Release(activeChips[i].Visual);
+            activeChips.RemoveAt(i);
+            removedCount++;
+        }
+
+        AddAmount((int)denomination * removedCount);
     }
 
     private void ApplyChipTransform(Transform chipTransform, Vector3 localPosition, Quaternion localRotation, Vector3 localScale)
