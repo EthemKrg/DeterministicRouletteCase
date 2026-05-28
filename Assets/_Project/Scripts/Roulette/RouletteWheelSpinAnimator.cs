@@ -57,28 +57,47 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
     [SerializeField] private float durationVariation = 0.5f;
 
     public event Action OnBallDropStarted;
+    public bool IsSpinAnimationPlaying => spinCoroutine != null;
+    public float ExpectedSpinDurationSeconds => CalculateExpectedSpinDuration(GetPositiveDuration(mainSpinDuration + Mathf.Max(0f, durationVariation)));
 
     private Transform[] euPocketTransforms;
     private Transform[] usPocketTransforms;
     private Transform[] currentPocketTransforms;
     private Quaternion initialWheelRotation;
+    private Coroutine spinCoroutine;
 
     private void Awake()
     {
-        initialWheelRotation = wheelSpace.localRotation;
+        if (wheelSpace != null)
+            initialWheelRotation = wheelSpace.localRotation;
+
         CachePocketTransforms();
         SetWheelType(RouletteWheelType.European);
     }
 
     private void CachePocketTransforms()
     {
-        euPocketTransforms = new Transform[euPocketParent.childCount];
-        for (int i = 0; i < euPocketParent.childCount; i++)
-            euPocketTransforms[i] = euPocketParent.GetChild(i);
+        if (euPocketParent != null)
+        {
+            euPocketTransforms = new Transform[euPocketParent.childCount];
+            for (int i = 0; i < euPocketParent.childCount; i++)
+                euPocketTransforms[i] = euPocketParent.GetChild(i);
+        }
+        else
+        {
+            euPocketTransforms = Array.Empty<Transform>();
+        }
 
-        usPocketTransforms = new Transform[usPocketParent.childCount];
-        for (int i = 0; i < usPocketParent.childCount; i++)
-            usPocketTransforms[i] = usPocketParent.GetChild(i);
+        if (usPocketParent != null)
+        {
+            usPocketTransforms = new Transform[usPocketParent.childCount];
+            for (int i = 0; i < usPocketParent.childCount; i++)
+                usPocketTransforms[i] = usPocketParent.GetChild(i);
+        }
+        else
+        {
+            usPocketTransforms = Array.Empty<Transform>();
+        }
     }
 
     public void SetWheelType(RouletteWheelType wheelType)
@@ -94,19 +113,93 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
             usWheelRoot.SetActive(isAmerican);
     }
 
-    public IEnumerator AnimateSpin(RouletteSlot winningSlot)
+    public float PlaySpin(RouletteSlot winningSlot)
     {
-        // Apply random variation for this spin
         float effectiveWheelSpinCount = wheelSpinCount + UnityEngine.Random.Range(-spinCountVariation, spinCountVariation);
         float effectiveBallOrbitCount = ballOrbitCount + UnityEngine.Random.Range(-orbitCountVariation, orbitCountVariation);
-        float effectiveMainSpinDuration = mainSpinDuration + UnityEngine.Random.Range(-durationVariation, durationVariation);
+        float effectiveMainSpinDuration = GetPositiveDuration(mainSpinDuration + UnityEngine.Random.Range(-durationVariation, durationVariation));
+        float expectedDuration = CalculateExpectedSpinDuration(effectiveMainSpinDuration);
 
-        yield return SpinRoutine();                                                    // Phase 0: wheel warmup
-        yield return BallReleaseRoutine(winningSlot, effectiveWheelSpinCount,          // Phase 1: ball released, both spin
+        StopSpinAnimation();
+
+        if (!CanPlaySpinVisual(winningSlot))
+            return 0f;
+
+        try
+        {
+            spinCoroutine = StartCoroutine(SpinAnimationRoutine(winningSlot, effectiveWheelSpinCount, effectiveBallOrbitCount, effectiveMainSpinDuration));
+        }
+        catch (Exception exception)
+        {
+            Debug.LogError($"RouletteWheelSpinAnimator: Spin visual could not start: {exception.Message}");
+            spinCoroutine = null;
+            return 0f;
+        }
+
+        return expectedDuration;
+    }
+
+    public void StopSpinAnimation()
+    {
+        if (spinCoroutine != null)
+        {
+            StopCoroutine(spinCoroutine);
+            spinCoroutine = null;
+        }
+    }
+
+    private IEnumerator SpinAnimationRoutine(RouletteSlot winningSlot, float effectiveWheelSpinCount, float effectiveBallOrbitCount, float effectiveMainSpinDuration)
+    {
+        IEnumerator routine = AnimateSpin(winningSlot, effectiveWheelSpinCount, effectiveBallOrbitCount, effectiveMainSpinDuration);
+
+        while (true)
+        {
+            bool hasNext = false;
+            object current = null;
+
+            try
+            {
+                hasNext = routine.MoveNext();
+                if (hasNext)
+                    current = routine.Current;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"RouletteWheelSpinAnimator: Spin visual failed with exception: {exception.Message}");
+                break;
+            }
+
+            if (!hasNext)
+                break;
+
+            yield return current;
+        }
+
+        spinCoroutine = null;
+    }
+
+    private IEnumerator AnimateSpin(RouletteSlot winningSlot, float effectiveWheelSpinCount, float effectiveBallOrbitCount, float effectiveMainSpinDuration)
+    {
+        IEnumerator phase = SpinRoutine();                                             // Phase 0: wheel warmup
+        while (phase.MoveNext())
+            yield return phase.Current;
+
+        phase = BallReleaseRoutine(winningSlot, effectiveWheelSpinCount,               // Phase 1: ball released, both spin
             effectiveBallOrbitCount, effectiveMainSpinDuration);
-        yield return CoastRoutine(winningSlot);                                        // Phase 2: wheel stopped, ball coasts
-        yield return DropRoutine(winningSlot);                                         // Phase 3: ball drops into pocket
-        yield return SettleRoutine();                                                  // Phase 4: ball settles in pocket
+        while (phase.MoveNext())
+            yield return phase.Current;
+
+        phase = CoastRoutine(winningSlot);                                             // Phase 2: wheel stopped, ball coasts
+        while (phase.MoveNext())
+            yield return phase.Current;
+
+        phase = DropRoutine(winningSlot);                                              // Phase 3: ball drops into pocket
+        while (phase.MoveNext())
+            yield return phase.Current;
+
+        phase = SettleRoutine();                                                       // Phase 4: ball settles in pocket
+        while (phase.MoveNext())
+            yield return phase.Current;
     }
 
     /// <summary>
@@ -116,10 +209,11 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
     private IEnumerator SpinRoutine()
     {
         float elapsed = 0f;
+        float duration = GetPositiveDuration(wheelWarmupDuration);
 
-        while (elapsed < wheelWarmupDuration)
+        while (elapsed < duration)
         {
-            float t = elapsed / wheelWarmupDuration;
+            float t = elapsed / duration;
 
             float currentAngle;
             if (t < 0.2f)
@@ -180,10 +274,11 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
         // --- SUB-PHASE 1a: Transition ball from scene position to release position ---
         // Wheel continues rotating (gentle ramp from warmup into main spin).
         float positionElapsed = 0f;
+        float positionDuration = GetPositiveDuration(ballPositionDuration);
 
-        while (positionElapsed < ballPositionDuration)
+        while (positionElapsed < positionDuration)
         {
-            float t = positionElapsed / ballPositionDuration;
+            float t = positionElapsed / positionDuration;
             float curveValue = Mathf.SmoothStep(0f, 1f, t);
 
             // Angle: startAngle → releaseAngle (in radians)
@@ -219,9 +314,11 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
         float elapsed = 0f;
         float totalOrbitAngle = 360f * effectiveBallOrbitCount;
 
-        while (elapsed < effectiveMainSpinDuration)
+        float mainDuration = GetPositiveDuration(effectiveMainSpinDuration);
+
+        while (elapsed < mainDuration)
         {
-            float t = elapsed / effectiveMainSpinDuration;
+            float t = elapsed / mainDuration;
 
             // Wheel: continues from warmup, decelerating
             float wheelCurve = wheelSpinCurve.Evaluate(t);
@@ -275,6 +372,7 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
         while (angleDiff < -2f * Mathf.PI) angleDiff += 2f * Mathf.PI; // max one full rotation
 
         float progress = 0f;
+        float duration = GetPositiveDuration(coastDuration);
 
         while (progress < 1f)
         {
@@ -285,7 +383,7 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
             float currentAngle = startAngle + angleDiff * easedProgress;
 
             // Dampened wobble (reaches zero at end) — uses progress-based phase for pause/resume safety
-            float wobblePhase = progress * coastDuration * orbitWobbleFrequency;
+            float wobblePhase = progress * duration * orbitWobbleFrequency;
             float wobble = 1f + orbitWobbleAmplitude * Mathf.Sin(wobblePhase) * (1f - progress);
             float currentRadius = orbitRadius * wobble;
 
@@ -295,7 +393,7 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
                 Mathf.Sin(currentAngle) * currentRadius
             );
 
-            progress += Time.deltaTime / coastDuration;
+            progress += Time.deltaTime / duration;
             yield return null;
         }
 
@@ -328,10 +426,11 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
         float targetAngle = Mathf.Atan2(localTarget.z, localTarget.x);
 
         float elapsed = 0f;
+        float duration = GetPositiveDuration(dropDuration);
 
-        while (elapsed < dropDuration)
+        while (elapsed < duration)
         {
-            float t = elapsed / dropDuration;
+            float t = elapsed / duration;
             float curveValue = ballDropCurve.Evaluate(t);
 
             // Y: interpolate from current Y to target Y
@@ -365,10 +464,11 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
         float elapsed = 0f;
         Vector3 startPos = ball.position;
         float bounceHeight = 0.02f;
+        float duration = GetPositiveDuration(settleDuration);
 
-        while (elapsed < settleDuration)
+        while (elapsed < duration)
         {
-            float t = elapsed / settleDuration;
+            float t = elapsed / duration;
             float heightOffset = Mathf.Sin(t * Mathf.PI * 3f) * bounceHeight * (1f - t);
             ball.position = startPos + Vector3.up * heightOffset;
 
@@ -381,6 +481,9 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
 
     private Transform GetPocketForSlot(RouletteSlot slot)
     {
+        if (currentPocketTransforms == null || currentPocketTransforms.Length == 0)
+            throw new InvalidOperationException("No roulette pocket transforms are available.");
+
         for (int i = 0; i < currentPocketTransforms.Length; i++)
         {
             string name = currentPocketTransforms[i].name;
@@ -395,5 +498,46 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
 
         Debug.LogWarning($"Pocket not found for slot {slot.Id}, returning first pocket");
         return currentPocketTransforms[0];
+    }
+
+    private bool CanPlaySpinVisual(RouletteSlot winningSlot)
+    {
+        if (winningSlot == null)
+            return false;
+
+        if (!isActiveAndEnabled)
+        {
+            Debug.LogWarning("RouletteWheelSpinAnimator: Animator is disabled.");
+            return false;
+        }
+
+        if (wheelSpace == null || ball == null)
+        {
+            Debug.LogWarning("RouletteWheelSpinAnimator: Wheel visual references are missing.");
+            return false;
+        }
+
+        if (currentPocketTransforms == null || currentPocketTransforms.Length == 0)
+        {
+            Debug.LogWarning("RouletteWheelSpinAnimator: Pocket references are missing.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private float CalculateExpectedSpinDuration(float effectiveMainSpinDuration)
+    {
+        return GetPositiveDuration(wheelWarmupDuration)
+            + GetPositiveDuration(ballPositionDuration)
+            + GetPositiveDuration(effectiveMainSpinDuration)
+            + GetPositiveDuration(coastDuration)
+            + GetPositiveDuration(dropDuration)
+            + GetPositiveDuration(settleDuration);
+    }
+
+    private float GetPositiveDuration(float duration)
+    {
+        return Mathf.Max(0.01f, duration);
     }
 }
