@@ -18,7 +18,13 @@ public class RouletteTableInputController : MonoBehaviour
     [SerializeField] private LayerMask tableControlLayerMask = 1 << 7;
     [SerializeField] private float rayDistance = 100f;
 
+    [Header("Touch Preview")]
+    [SerializeField] private bool keepTouchHighlightBrieflyAfterRelease = true;
+    [SerializeField] private float touchHighlightReleaseHoldSeconds = 0.12f;
+
     private RouletteBetArea hoveredBetArea;
+    private bool wasTouchPreviewActive;
+    private float touchPreviewClearTime = -1f;
 
     private void Awake()
     {
@@ -27,7 +33,7 @@ public class RouletteTableInputController : MonoBehaviour
 
     private void Update()
     {
-        UpdateHover();
+        UpdatePointerPreview();
 
         if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
         {
@@ -81,7 +87,7 @@ public class RouletteTableInputController : MonoBehaviour
 
         if (!betArea.IsAvailableForWheelType(gameFlowController.GameState.WheelType))
         {
-            highlightController.ClearHighlight();
+            ClearHoveredBetArea();
             return;
         }
 
@@ -95,11 +101,17 @@ public class RouletteTableInputController : MonoBehaviour
             {
                 Vector3 stackPosition = chipStackViewController.ReserveNextChipWorldPosition(betArea);
                 reservedStackPosition = true;
+
                 int stackVisualVersion = chipStackViewController.GetVisualVersion();
+
                 balanceChipDisplayController.SetNextBetChipTarget(
                     selectedChip,
                     stackPosition,
-                    () => chipStackViewController.ShowOrUpdateStack(betArea, selectedChip, bet.Stake, stackVisualVersion));
+                    () => chipStackViewController.ShowOrUpdateStack(
+                        betArea,
+                        selectedChip,
+                        bet.Stake,
+                        stackVisualVersion));
             }
 
             gameFlowController.PlacePreparedBet(bet);
@@ -119,30 +131,63 @@ public class RouletteTableInputController : MonoBehaviour
         }
     }
 
-    private void ValidateReferences()
+    private void UpdatePointerPreview()
     {
-        if (rayCamera == null)
-            throw new System.InvalidOperationException($"{nameof(RouletteTableInputController)} needs a ray camera reference.");
-
-        if (gameFlowController == null)
-            throw new System.InvalidOperationException($"{nameof(RouletteTableInputController)} needs a GameFlowController reference.");
-
-        if (chipSelectionController == null)
-            throw new System.InvalidOperationException($"{nameof(RouletteTableInputController)} needs a ChipSelectionController reference.");
-
         if (highlightController == null)
-            throw new System.InvalidOperationException($"{nameof(RouletteTableInputController)} needs a RouletteTableHighlightController reference.");
-
-        if (chipStackViewController == null)
-            throw new System.InvalidOperationException($"{nameof(RouletteTableInputController)} needs a ChipStackViewController reference.");
-    }
-
-    private void UpdateHover()
-    {
-        if (Mouse.current == null || highlightController == null)
             return;
 
-        RouletteBetArea betArea = GetBetAreaAtScreenPosition(Mouse.current.position.ReadValue());
+        if (TryGetActiveTouchPosition(out Vector2 touchPosition, out int touchPointerId))
+        {
+            wasTouchPreviewActive = true;
+            touchPreviewClearTime = -1f;
+
+            UpdateHoverAtScreenPosition(touchPosition, touchPointerId);
+            return;
+        }
+
+        if (wasTouchPreviewActive)
+        {
+            if (keepTouchHighlightBrieflyAfterRelease)
+            {
+                if (touchPreviewClearTime < 0f)
+                    touchPreviewClearTime = Time.time + touchHighlightReleaseHoldSeconds;
+
+                if (Time.time < touchPreviewClearTime)
+                    return;
+            }
+
+            wasTouchPreviewActive = false;
+            touchPreviewClearTime = -1f;
+            ClearHoveredBetArea();
+            return;
+        }
+
+        if (Mouse.current != null)
+            UpdateHoverAtScreenPosition(Mouse.current.position.ReadValue(), -1);
+    }
+
+    private bool TryGetActiveTouchPosition(out Vector2 screenPosition, out int pointerId)
+    {
+        if (Touchscreen.current != null)
+        {
+            var primaryTouch = Touchscreen.current.primaryTouch;
+
+            if (primaryTouch.press.isPressed)
+            {
+                screenPosition = primaryTouch.position.ReadValue();
+                pointerId = primaryTouch.touchId.ReadValue();
+                return true;
+            }
+        }
+
+        screenPosition = default;
+        pointerId = -1;
+        return false;
+    }
+
+    private void UpdateHoverAtScreenPosition(Vector2 screenPosition, int pointerId)
+    {
+        RouletteBetArea betArea = GetBetAreaAtScreenPosition(screenPosition, pointerId);
 
         if (betArea == hoveredBetArea)
             return;
@@ -159,9 +204,9 @@ public class RouletteTableInputController : MonoBehaviour
         highlightController.HighlightBetArea(hoveredBetArea, previewSlotIds);
     }
 
-    private RouletteBetArea GetBetAreaAtScreenPosition(Vector2 screenPosition)
+    private RouletteBetArea GetBetAreaAtScreenPosition(Vector2 screenPosition, int pointerId)
     {
-        if (IsPointerBlockedByUi(-1) || IsPointerBlockedByTableControl(screenPosition))
+        if (IsPointerBlockedByUi(pointerId) || IsPointerBlockedByTableControl(screenPosition))
             return null;
 
         if (!gameFlowController.TryCanAcceptGameplayInput(GameplayInputKind.BetPlacement, out _))
@@ -171,6 +216,15 @@ public class RouletteTableInputController : MonoBehaviour
             return null;
 
         return hit.collider.GetComponentInParent<RouletteBetArea>();
+    }
+
+    private void ClearHoveredBetArea()
+    {
+        if (hoveredBetArea == null)
+            return;
+
+        hoveredBetArea = null;
+        highlightController.ClearHighlight();
     }
 
     private bool IsPointerBlockedByUi(int pointerId)
@@ -191,8 +245,15 @@ public class RouletteTableInputController : MonoBehaviour
 
         Ray ray = rayCamera.ScreenPointToRay(screenPosition);
 
-        if (!Physics.Raycast(ray, out RaycastHit hit, rayDistance, tableControlLayerMask, QueryTriggerInteraction.Ignore))
+        if (!Physics.Raycast(
+                ray,
+                out RaycastHit hit,
+                rayDistance,
+                tableControlLayerMask,
+                QueryTriggerInteraction.Collide))
+        {
             return false;
+        }
 
         return hit.collider.GetComponentInParent<TableGameControls3DButton>() != null;
     }
@@ -200,6 +261,30 @@ public class RouletteTableInputController : MonoBehaviour
     private bool TryGetTableHit(Vector2 screenPosition, out RaycastHit hit)
     {
         Ray ray = rayCamera.ScreenPointToRay(screenPosition);
-        return Physics.Raycast(ray, out hit, rayDistance, betAreaLayerMask);
+
+        return Physics.Raycast(
+            ray,
+            out hit,
+            rayDistance,
+            betAreaLayerMask,
+            QueryTriggerInteraction.Collide);
+    }
+
+    private void ValidateReferences()
+    {
+        if (rayCamera == null)
+            throw new System.InvalidOperationException($"{nameof(RouletteTableInputController)} needs a ray camera reference.");
+
+        if (gameFlowController == null)
+            throw new System.InvalidOperationException($"{nameof(RouletteTableInputController)} needs a GameFlowController reference.");
+
+        if (chipSelectionController == null)
+            throw new System.InvalidOperationException($"{nameof(RouletteTableInputController)} needs a ChipSelectionController reference.");
+
+        if (highlightController == null)
+            throw new System.InvalidOperationException($"{nameof(RouletteTableInputController)} needs a RouletteTableHighlightController reference.");
+
+        if (chipStackViewController == null)
+            throw new System.InvalidOperationException($"{nameof(RouletteTableInputController)} needs a ChipStackViewController reference.");
     }
 }
