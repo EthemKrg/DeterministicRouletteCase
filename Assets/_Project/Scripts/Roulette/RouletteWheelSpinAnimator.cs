@@ -16,38 +16,41 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
     [SerializeField] private Transform euPocketParent;
     [SerializeField] private Transform usPocketParent;
 
-    [Header("Phase 1: Accelerate")]
-    [SerializeField] private float accelerationDuration = 1.25f;
-    [SerializeField] private float wheelAccelerationRotations = 2.75f;
+    [Header("Wheel Motion")]
+    [SerializeField] private float wheelStopDuration = 2.6f;
+    [SerializeField] private float wheelTotalRotations = 4.5f;
+
+    [Header("Ball Motion")]
+    [SerializeField] private float ballAccelerationDuration = 1.0f;
+    [SerializeField] private float ballDecelerationDuration = 2.4f;
     [SerializeField] private float ballFastSpeedDegPerSecond = 850f;
+    [SerializeField] private float ballSlowSpeedDegPerSecond = 160f;
+    [SerializeField] private float slowOrbitCountBeforeDrop = 1f;
 
-    [Header("Phase 2: Decelerate To Slow Speed")]
-    [SerializeField] private float wheelDecelerationDuration = 2.4f;
-    [SerializeField] private float wheelDecelerationRotations = 2.25f;
-    [SerializeField] private float ballDecelerationDuration = 2.8f;
-    [SerializeField] private float ballSlowSpeedDegPerSecond = 120f;
+    [Header("Drop Motion")]
+    [SerializeField] private float dropDuration = 0.9f;
+    [SerializeField] private float dropAngleSharpness = 1.35f;
+    [SerializeField] private float dropRadiusStartDelay = 0.25f;
+    [SerializeField] private float dropHeightStartDelay = 0.45f;
+    [SerializeField] private float finalPocketSnapBlend = 0.35f;
+    [SerializeField] private AnimationCurve dropRadiusCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+    [SerializeField] private AnimationCurve dropHeightCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
-    [Header("Phase 3: Slow Orbit Before Drop")]
-    [SerializeField] private float slowOrbitCount = 1f;
+    [Header("Settle")]
+    [SerializeField] private float settleDuration = 0.25f;
+    [SerializeField] private float settleBounceHeight = 0.02f;
 
-    [Header("Phase 4: Approach / Drop")]
-    [SerializeField] private float approachDuration = 1.15f;
-    [SerializeField] private AnimationCurve approachRadiusCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
-    [SerializeField] private AnimationCurve approachHeightCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
-
-    [Header("Phase 5: Settle")]
-    [SerializeField] private float settleDuration = 0.3f;
-
-    [Header("Ball Settings")]
+    [Header("Ball Placement")]
     [SerializeField] private float spinHeight = 2.2f;
     [SerializeField] private float orbitRadius = 1.5f;
     [SerializeField] private float landingYOffset = 0.15f;
-    [SerializeField] private float orbitWobbleAmplitude = 0.025f;
+    [SerializeField] private float orbitWobbleAmplitude = 0.02f;
     [SerializeField] private float orbitWobbleFrequency = 4f;
 
     [Header("Random Variation")]
-    [SerializeField] private float fastSpeedVariation = 80f;
-    [SerializeField] private float durationVariation = 0.15f;
+    [SerializeField] private float wheelRotationVariation = 0.35f;
+    [SerializeField] private float fastSpeedVariation = 70f;
+    [SerializeField] private float durationVariation = 0.12f;
 
     public event Action OnBallDropStarted;
 
@@ -128,7 +131,7 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
 
         try
         {
-            spinCoroutine = StartCoroutine(SpinAnimationRoutine(winningSlot, plan));
+            spinCoroutine = StartCoroutine(SpinRoutine(winningSlot, plan));
         }
         catch (Exception exception)
         {
@@ -149,7 +152,7 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
         spinCoroutine = null;
     }
 
-    private IEnumerator SpinAnimationRoutine(RouletteSlot winningSlot, SpinPlan plan)
+    private IEnumerator SpinRoutine(RouletteSlot winningSlot, SpinPlan plan)
     {
         IEnumerator routine = AnimateSpin(winningSlot, plan);
 
@@ -182,20 +185,147 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
 
     private IEnumerator AnimateSpin(RouletteSlot winningSlot, SpinPlan plan)
     {
-        PrepareSpinStart();
+        ResetVisualState();
 
-        yield return AccelerateRoutine(plan);
-        yield return DecelerateRoutine(plan);
-        yield return AlignToApproachStartRoutine(plan);
-        yield return SlowOrbitRoutine(plan);
+        float elapsed = 0f;
+        bool dropEventSent = false;
 
-        OnBallDropStarted?.Invoke();
+        while (elapsed < plan.TotalDurationBeforeSettle)
+        {
+            float wheelAngle = EvaluateWheelAngle(elapsed, plan);
+            wheelAngleDeg = wheelAngle;
+            ApplyWheelRotation();
 
-        yield return ApproachPocketRoutine(winningSlot, plan);
+            if (elapsed < plan.DropStartTime)
+            {
+                float travel = EvaluateBallTravelBeforeDrop(elapsed, plan);
+                ballAngleDeg = -travel;
+
+                ApplyBallOrbit(ballAngleDeg, orbitRadius, spinHeight, elapsed);
+            }
+            else
+            {
+                if (!dropEventSent)
+                {
+                    dropEventSent = true;
+                    OnBallDropStarted?.Invoke();
+                }
+
+                float dropElapsed = elapsed - plan.DropStartTime;
+                ApplyDropMotion(winningSlot, plan, dropElapsed);
+            }
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        wheelAngleDeg = plan.FinalWheelAngleDeg;
+        ApplyWheelRotation();
+
+        Transform targetPocket = GetPocketForSlot(winningSlot);
+        ball.position = targetPocket.position + Vector3.up * landingYOffset;
+        ballAngleDeg = plan.TargetBallAngleDeg;
+
         yield return SettleRoutine();
+
+        spinCoroutine = null;
     }
 
-    private void PrepareSpinStart()
+    private SpinPlan CreateSpinPlan(RouletteSlot winningSlot)
+    {
+        orbitCenter = wheelSpace.position;
+
+        float effectiveWheelRotations = Mathf.Max(
+            0.1f,
+            wheelTotalRotations + UnityEngine.Random.Range(-wheelRotationVariation, wheelRotationVariation));
+
+        float effectiveWheelStopDuration = GetPositiveDuration(
+            wheelStopDuration + UnityEngine.Random.Range(-durationVariation, durationVariation));
+
+        float effectiveBallAccelerationDuration = GetPositiveDuration(
+            ballAccelerationDuration + UnityEngine.Random.Range(-durationVariation, durationVariation));
+
+        float effectiveBallDecelerationDuration = GetPositiveDuration(
+            ballDecelerationDuration + UnityEngine.Random.Range(-durationVariation, durationVariation));
+
+        float effectiveFastSpeed = Mathf.Max(
+            ballSlowSpeedDegPerSecond + 30f,
+            ballFastSpeedDegPerSecond + UnityEngine.Random.Range(-fastSpeedVariation, fastSpeedVariation));
+
+        float effectiveSlowSpeed = Mathf.Max(20f, ballSlowSpeedDegPerSecond);
+        float effectiveDropDuration = GetPositiveDuration(dropDuration);
+
+        float finalWheelAngle = effectiveWheelRotations * 360f;
+        float finalPocketAngle = GetPocketAngleForWheelAngle(winningSlot, finalWheelAngle);
+
+        float accelerationTravel = GetAccelerationTravel(
+            effectiveFastSpeed,
+            effectiveBallAccelerationDuration,
+            effectiveBallAccelerationDuration);
+
+        float decelerationTravel = GetDecelerationTravel(
+            effectiveFastSpeed,
+            effectiveSlowSpeed,
+            effectiveBallDecelerationDuration,
+            effectiveBallDecelerationDuration);
+
+        float dropTravel = GetDropTravel(effectiveSlowSpeed, effectiveDropDuration);
+
+        float slowOrbitTravel = Mathf.Max(0f, slowOrbitCountBeforeDrop) * 360f;
+
+        // During the drop, the ball keeps moving CCW and slows down to zero.
+        // Therefore the drop must start this many degrees before the pocket.
+        float dropStartWrappedAngle = NormalizeAngle360(finalPocketAngle + dropTravel);
+
+        float travelBeforeAlignment = accelerationTravel + decelerationTravel;
+        float targetTravelAtDropStart = GetTravelDistanceForWrappedAngle(dropStartWrappedAngle, travelBeforeAlignment);
+
+        float alignmentTravel = targetTravelAtDropStart - travelBeforeAlignment;
+
+        // The requested visible beat: slow speed, then one more full orbit, then drop.
+        // Alignment is also slow speed, but it happens before that final readable orbit.
+        float alignmentDuration = alignmentTravel / effectiveSlowSpeed;
+        float slowOrbitDuration = slowOrbitTravel / effectiveSlowSpeed;
+
+        float dropStartTime =
+            effectiveBallAccelerationDuration +
+            effectiveBallDecelerationDuration +
+            alignmentDuration +
+            slowOrbitDuration;
+
+        float totalDurationBeforeSettle = dropStartTime + effectiveDropDuration;
+        float totalDuration = totalDurationBeforeSettle + GetPositiveDuration(settleDuration);
+
+        return new SpinPlan
+        {
+            WheelStopDuration = effectiveWheelStopDuration,
+            FinalWheelAngleDeg = finalWheelAngle,
+
+            BallAccelerationDuration = effectiveBallAccelerationDuration,
+            BallDecelerationDuration = effectiveBallDecelerationDuration,
+            BallFastSpeedDegPerSecond = effectiveFastSpeed,
+            BallSlowSpeedDegPerSecond = effectiveSlowSpeed,
+
+            AccelerationTravelDeg = accelerationTravel,
+            DecelerationTravelDeg = decelerationTravel,
+            AlignmentTravelDeg = alignmentTravel,
+            AlignmentDuration = alignmentDuration,
+            SlowOrbitTravelDeg = slowOrbitTravel,
+            SlowOrbitDuration = slowOrbitDuration,
+
+            DropDuration = effectiveDropDuration,
+            DropTravelDeg = dropTravel,
+            DropStartTime = dropStartTime,
+
+            TargetPocketAngleDeg = finalPocketAngle,
+            TargetBallAngleDeg = -targetTravelAtDropStart - slowOrbitTravel - dropTravel,
+
+            TotalDurationBeforeSettle = totalDurationBeforeSettle,
+            TotalDuration = totalDuration
+        };
+    }
+
+    private void ResetVisualState()
     {
         orbitCenter = wheelSpace.position;
 
@@ -206,223 +336,77 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
         ball.position = orbitCenter + OrbitOffset(0f, orbitRadius, spinHeight);
     }
 
-    private SpinPlan CreateSpinPlan(RouletteSlot winningSlot)
+    private float EvaluateWheelAngle(float elapsed, SpinPlan plan)
     {
-        orbitCenter = wheelSpace.position;
+        float t = Mathf.Clamp01(elapsed / plan.WheelStopDuration);
+        float easedT = SmoothStep01(t);
 
-        float effectiveAccelerationDuration = GetPositiveDuration(
-            accelerationDuration + UnityEngine.Random.Range(-durationVariation, durationVariation));
-
-        float effectiveWheelDecelerationDuration = GetPositiveDuration(
-            wheelDecelerationDuration + UnityEngine.Random.Range(-durationVariation, durationVariation));
-
-        float effectiveBallDecelerationDuration = GetPositiveDuration(
-            ballDecelerationDuration + UnityEngine.Random.Range(-durationVariation, durationVariation));
-
-        float effectiveFastSpeed = Mathf.Max(
-            ballSlowSpeedDegPerSecond + 30f,
-            ballFastSpeedDegPerSecond + UnityEngine.Random.Range(-fastSpeedVariation, fastSpeedVariation));
-
-        float effectiveSlowSpeed = Mathf.Max(20f, ballSlowSpeedDegPerSecond);
-
-        float finalWheelAngle = wheelAccelerationRotations * 360f + wheelDecelerationRotations * 360f;
-        float finalPocketAngle = GetPocketAngleForWheelAngle(winningSlot, finalWheelAngle);
-
-        float approachTravelAngle = GetApproachTravelAngle(effectiveSlowSpeed, approachDuration);
-        float approachStartWrappedAngle = NormalizeAngle360(finalPocketAngle + approachTravelAngle);
-
-        float accelTravelAngle = GetAccelerationTravelAngle(effectiveFastSpeed, effectiveAccelerationDuration);
-
-        float decelerationPhaseDuration = Mathf.Max(effectiveWheelDecelerationDuration, effectiveBallDecelerationDuration);
-        float decelTravelAngle = GetDecelerationTravelAngle(
-            effectiveFastSpeed,
-            effectiveSlowSpeed,
-            effectiveBallDecelerationDuration,
-            decelerationPhaseDuration);
-
-        float angleAfterDeceleration = -(accelTravelAngle + decelTravelAngle);
-
-        float alignmentTravelAngle = GetCcwDistanceToWrappedAngle(angleAfterDeceleration, approachStartWrappedAngle);
-        if (alignmentTravelAngle < 0.1f)
-            alignmentTravelAngle = 0f;
-
-        float alignmentDuration = alignmentTravelAngle / effectiveSlowSpeed;
-        float slowOrbitDuration = GetSlowOrbitDuration(effectiveSlowSpeed);
-
-        float totalDuration =
-            effectiveAccelerationDuration +
-            decelerationPhaseDuration +
-            alignmentDuration +
-            slowOrbitDuration +
-            GetPositiveDuration(approachDuration) +
-            GetPositiveDuration(settleDuration);
-
-        return new SpinPlan
-        {
-            AccelerationDuration = effectiveAccelerationDuration,
-            WheelDecelerationDuration = effectiveWheelDecelerationDuration,
-            BallDecelerationDuration = effectiveBallDecelerationDuration,
-            DecelerationPhaseDuration = decelerationPhaseDuration,
-            BallFastSpeedDegPerSecond = effectiveFastSpeed,
-            BallSlowSpeedDegPerSecond = effectiveSlowSpeed,
-            FinalWheelAngleDeg = finalWheelAngle,
-            ApproachTravelAngleDeg = approachTravelAngle,
-            ApproachStartWrappedAngleDeg = approachStartWrappedAngle,
-            AlignmentTravelAngleDeg = alignmentTravelAngle,
-            AlignmentDuration = alignmentDuration,
-            SlowOrbitDuration = slowOrbitDuration,
-            TotalDuration = totalDuration
-        };
+        return plan.FinalWheelAngleDeg * easedT;
     }
 
-    private IEnumerator AccelerateRoutine(SpinPlan plan)
+    private float EvaluateBallTravelBeforeDrop(float elapsed, SpinPlan plan)
     {
-        float startWheelAngle = wheelAngleDeg;
-        float targetWheelAngle = startWheelAngle + wheelAccelerationRotations * 360f;
-
-        float startBallAngle = ballAngleDeg;
-
-        float elapsed = 0f;
-
-        while (elapsed < plan.AccelerationDuration)
+        if (elapsed <= plan.BallAccelerationDuration)
         {
-            float t = elapsed / plan.AccelerationDuration;
-            float smoothT = SmoothStep01(t);
-
-            wheelAngleDeg = Mathf.LerpUnclamped(startWheelAngle, targetWheelAngle, smoothT);
-
-            float ballTravel = GetAccelerationTravelAngle(
+            return GetAccelerationTravel(
                 plan.BallFastSpeedDegPerSecond,
-                plan.AccelerationDuration,
-                t);
-
-            ballAngleDeg = startBallAngle - ballTravel;
-
-            ApplyWheelRotation();
-            ApplyBallOrbit(ballAngleDeg, orbitRadius, spinHeight, elapsed);
-
-            elapsed += Time.deltaTime;
-            yield return null;
+                plan.BallAccelerationDuration,
+                elapsed);
         }
 
-        wheelAngleDeg = targetWheelAngle;
-        ballAngleDeg = startBallAngle - GetAccelerationTravelAngle(
-            plan.BallFastSpeedDegPerSecond,
-            plan.AccelerationDuration);
+        elapsed -= plan.BallAccelerationDuration;
 
-        ApplyWheelRotation();
-        ApplyBallOrbit(ballAngleDeg, orbitRadius, spinHeight, plan.AccelerationDuration);
-    }
-
-    private IEnumerator DecelerateRoutine(SpinPlan plan)
-    {
-        float startWheelAngle = wheelAngleDeg;
-        float targetWheelAngle = plan.FinalWheelAngleDeg;
-
-        float startBallAngle = ballAngleDeg;
-
-        float fullBallRampTravel = GetDecelerationTravelAngle(
-            plan.BallFastSpeedDegPerSecond,
-            plan.BallSlowSpeedDegPerSecond,
-            plan.BallDecelerationDuration,
-            plan.BallDecelerationDuration);
-
-        float elapsed = 0f;
-
-        while (elapsed < plan.DecelerationPhaseDuration)
+        if (elapsed <= plan.BallDecelerationDuration)
         {
-            float wheelT = Mathf.Clamp01(elapsed / plan.WheelDecelerationDuration);
-            float wheelProgress = SmoothStep01(wheelT);
-            wheelAngleDeg = Mathf.LerpUnclamped(startWheelAngle, targetWheelAngle, wheelProgress);
-
-            float ballTravel;
-
-            if (elapsed <= plan.BallDecelerationDuration)
-            {
-                ballTravel = GetDecelerationTravelAngle(
-                    plan.BallFastSpeedDegPerSecond,
-                    plan.BallSlowSpeedDegPerSecond,
-                    plan.BallDecelerationDuration,
-                    elapsed);
-            }
-            else
-            {
-                ballTravel = fullBallRampTravel
-                    + plan.BallSlowSpeedDegPerSecond * (elapsed - plan.BallDecelerationDuration);
-            }
-
-            ballAngleDeg = startBallAngle - ballTravel;
-
-            ApplyWheelRotation();
-            ApplyBallOrbit(ballAngleDeg, orbitRadius, spinHeight, elapsed);
-
-            elapsed += Time.deltaTime;
-            yield return null;
+            return plan.AccelerationTravelDeg + GetDecelerationTravel(
+                plan.BallFastSpeedDegPerSecond,
+                plan.BallSlowSpeedDegPerSecond,
+                plan.BallDecelerationDuration,
+                elapsed);
         }
 
-        wheelAngleDeg = targetWheelAngle;
+        elapsed -= plan.BallDecelerationDuration;
 
-        float finalBallTravel = GetDecelerationTravelAngle(
-            plan.BallFastSpeedDegPerSecond,
-            plan.BallSlowSpeedDegPerSecond,
-            plan.BallDecelerationDuration,
-            plan.DecelerationPhaseDuration);
-
-        ballAngleDeg = startBallAngle - finalBallTravel;
-
-        ApplyWheelRotation();
-        ApplyBallOrbit(ballAngleDeg, orbitRadius, spinHeight, plan.DecelerationPhaseDuration);
-    }
-
-    private IEnumerator AlignToApproachStartRoutine(SpinPlan plan)
-    {
-        if (plan.AlignmentTravelAngleDeg <= 0.01f)
-            yield break;
-
-        float startAngle = ballAngleDeg;
-        float targetAngle = startAngle - plan.AlignmentTravelAngleDeg;
-
-        float elapsed = 0f;
-
-        while (elapsed < plan.AlignmentDuration)
+        if (elapsed <= plan.AlignmentDuration)
         {
-            float ballTravel = plan.BallSlowSpeedDegPerSecond * elapsed;
-            ballAngleDeg = startAngle - ballTravel;
-
-            ApplyBallOrbit(ballAngleDeg, orbitRadius, spinHeight, elapsed);
-
-            elapsed += Time.deltaTime;
-            yield return null;
+            return plan.AccelerationTravelDeg
+                + plan.DecelerationTravelDeg
+                + plan.BallSlowSpeedDegPerSecond * elapsed;
         }
 
-        ballAngleDeg = targetAngle;
-        ApplyBallOrbit(ballAngleDeg, orbitRadius, spinHeight, plan.AlignmentDuration);
+        elapsed -= plan.AlignmentDuration;
+
+        return plan.AccelerationTravelDeg
+            + plan.DecelerationTravelDeg
+            + plan.AlignmentTravelDeg
+            + plan.BallSlowSpeedDegPerSecond * Mathf.Min(elapsed, plan.SlowOrbitDuration);
     }
 
-    private IEnumerator SlowOrbitRoutine(SpinPlan plan)
+    private void ApplyDropMotion(RouletteSlot winningSlot, SpinPlan plan, float dropElapsed)
     {
-        float startAngle = ballAngleDeg;
-        float targetAngle = startAngle - Mathf.Max(0f, slowOrbitCount) * 360f;
+        float t = Mathf.Clamp01(dropElapsed / plan.DropDuration);
 
-        float elapsed = 0f;
+        // Angle is intentionally a little sharper near the end.
+        // The ball is already slow here, so a slightly firmer angular correction reads as
+        // "falling into the pocket" instead of "sliding mathematically toward a point".
+        float angleProgress = IntegratedDecelerationToStop01(t);
+        angleProgress = Mathf.Pow(angleProgress, Mathf.Max(0.25f, dropAngleSharpness));
 
-        while (elapsed < plan.SlowOrbitDuration)
-        {
-            float ballTravel = plan.BallSlowSpeedDegPerSecond * elapsed;
-            ballAngleDeg = startAngle - ballTravel;
+        // Radius and height should not collapse immediately.
+        // First the ball keeps circling on the rim, then it tips inward and drops.
+        float radiusT = Remap01(t, dropRadiusStartDelay, 1f);
+        float heightT = Remap01(t, dropHeightStartDelay, 1f);
 
-            ApplyBallOrbit(ballAngleDeg, orbitRadius, spinHeight, elapsed);
+        float radiusProgress = EvaluateCurve01(dropRadiusCurve, radiusT, SmoothStep01(radiusT));
+        float heightProgress = EvaluateCurve01(dropHeightCurve, heightT, SmoothStep01(heightT));
 
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
+        float travelAtDropStart = plan.AccelerationTravelDeg
+            + plan.DecelerationTravelDeg
+            + plan.AlignmentTravelDeg
+            + plan.SlowOrbitTravelDeg;
 
-        ballAngleDeg = targetAngle;
-        ApplyBallOrbit(ballAngleDeg, orbitRadius, spinHeight, plan.SlowOrbitDuration);
-    }
+        ballAngleDeg = -(travelAtDropStart + plan.DropTravelDeg * angleProgress);
 
-    private IEnumerator ApproachPocketRoutine(RouletteSlot winningSlot, SpinPlan plan)
-    {
         Transform targetPocket = GetPocketForSlot(winningSlot);
         Vector3 targetWorldPos = targetPocket.position + Vector3.up * landingYOffset;
 
@@ -430,53 +414,30 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
         float targetRadius = new Vector3(targetOffset.x, 0f, targetOffset.z).magnitude;
         float targetHeight = targetOffset.y;
 
-        Vector3 currentOffset = ball.position - orbitCenter;
-        float startRadius = new Vector3(currentOffset.x, 0f, currentOffset.z).magnitude;
-        float startHeight = currentOffset.y;
+        float currentRadius = Mathf.Lerp(orbitRadius, targetRadius, radiusProgress);
+        float currentHeight = Mathf.Lerp(spinHeight, targetHeight, heightProgress);
 
-        float startAngle = ballAngleDeg;
-        float targetAngle = startAngle - plan.ApproachTravelAngleDeg;
+        Vector3 orbitPosition = orbitCenter + OrbitOffset(ballAngleDeg * Mathf.Deg2Rad, currentRadius, currentHeight);
 
-        float duration = GetPositiveDuration(approachDuration);
-        float elapsed = 0f;
+        // In the final slice, blend to the exact pocket transform.
+        // This hides tiny angle/reference mismatches from the wheel mesh and makes the ball
+        // visibly commit to the selected slot.
+        float snapT = Remap01(t, 1f - Mathf.Clamp01(finalPocketSnapBlend), 1f);
+        snapT = SmoothStep01(snapT);
 
-        while (elapsed < duration)
-        {
-            float t = elapsed / duration;
-
-            // This progress is the integral of a speed that starts at slow speed and eases to zero.
-            // It avoids the common "slow orbit, then sudden approach acceleration" problem.
-            float angleProgress = IntegratedDecelerationToStop01(t);
-
-            float radiusProgress = EvaluateCurve01(approachRadiusCurve, t, SmoothStep01(t));
-            float heightProgress = EvaluateCurve01(approachHeightCurve, t, SmoothStep01(t));
-
-            float currentAngle = Mathf.LerpUnclamped(startAngle, targetAngle, angleProgress);
-            float currentRadius = Mathf.Lerp(startRadius, targetRadius, radiusProgress);
-            float currentHeight = Mathf.Lerp(startHeight, targetHeight, heightProgress);
-
-            ball.position = orbitCenter + OrbitOffset(currentAngle * Mathf.Deg2Rad, currentRadius, currentHeight);
-
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-
-        ballAngleDeg = targetAngle;
-        ball.position = targetWorldPos;
+        ball.position = Vector3.Lerp(orbitPosition, targetWorldPos, snapT);
     }
 
     private IEnumerator SettleRoutine()
     {
         Vector3 startPos = ball.position;
-        float bounceHeight = 0.02f;
-
-        float duration = GetPositiveDuration(settleDuration);
         float elapsed = 0f;
+        float duration = GetPositiveDuration(settleDuration);
 
         while (elapsed < duration)
         {
             float t = elapsed / duration;
-            float heightOffset = Mathf.Sin(t * Mathf.PI * 3f) * bounceHeight * (1f - t);
+            float heightOffset = Mathf.Sin(t * Mathf.PI * 3f) * settleBounceHeight * (1f - t);
 
             ball.position = startPos + Vector3.up * heightOffset;
 
@@ -530,19 +491,19 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
                 return currentPocketTransforms[i];
         }
 
-        Debug.LogWarning($"Pocket not found for slot {slot.Id}, returning first pocket.");
+        Debug.LogWarning($"RouletteWheelSpinAnimator: Pocket not found for slot {slot.Id}. Returning first pocket.");
         return currentPocketTransforms[0];
     }
 
     private float GetPocketAngleForWheelAngle(RouletteSlot slot, float finalWheelAngleDeg)
     {
-        Quaternion originalRotation = wheelSpace.localRotation;
+        Quaternion previousRotation = wheelSpace.localRotation;
 
         wheelSpace.localRotation = initialWheelRotation * Quaternion.Euler(0f, finalWheelAngleDeg, 0f);
 
         float angle = GetPocketAngleDeg(slot);
 
-        wheelSpace.localRotation = originalRotation;
+        wheelSpace.localRotation = previousRotation;
 
         return angle;
     }
@@ -556,72 +517,47 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
         return Mathf.Atan2(targetOffset.z, targetOffset.x) * Mathf.Rad2Deg;
     }
 
-    private float GetAccelerationTravelAngle(float fastSpeed, float duration)
+    private float GetTravelDistanceForWrappedAngle(float targetWrappedAngle, float minimumTravel)
     {
-        return fastSpeed * duration * 0.5f;
+        // Ball angle is -travel because it moves counter-clockwise.
+        float baseTravel = NormalizeAngle360(-targetWrappedAngle);
+
+        while (baseTravel < minimumTravel)
+            baseTravel += 360f;
+
+        return baseTravel;
     }
 
-    private float GetAccelerationTravelAngle(float fastSpeed, float duration, float normalizedTime)
+    private float GetAccelerationTravel(float fastSpeed, float duration, float elapsed)
     {
-        float t = Mathf.Clamp01(normalizedTime);
+        float safeDuration = GetPositiveDuration(duration);
+        float t = Mathf.Clamp01(elapsed / safeDuration);
 
-        // Integral of SmoothStep01(t): t^3 - 0.5t^4
-        // The final value at t=1 is 0.5, so travel = fastSpeed * duration * 0.5.
-        return fastSpeed * duration * (t * t * t - 0.5f * t * t * t * t);
+        // Integral of SmoothStep speed from 0 to fast speed.
+        return fastSpeed * safeDuration * IntegratedSmoothStep01(t);
     }
 
-    private float GetDecelerationTravelAngle(float fastSpeed, float slowSpeed, float rampDuration, float elapsed)
+    private float GetDecelerationTravel(float fastSpeed, float slowSpeed, float duration, float elapsed)
     {
-        float duration = GetPositiveDuration(rampDuration);
-        float clampedElapsed = Mathf.Clamp(elapsed, 0f, duration);
-        float t = clampedElapsed / duration;
+        float safeDuration = GetPositiveDuration(duration);
+        float clampedElapsed = Mathf.Clamp(elapsed, 0f, safeDuration);
+        float t = clampedElapsed / safeDuration;
 
-        // Speed curve:
-        // speed = Lerp(fastSpeed, slowSpeed, SmoothStep01(t))
-        //
-        // Integrated travel:
-        // fast * time + (slow - fast) * duration * Integral(SmoothStep)
-        float integralSmoothStep = t * t * t - 0.5f * t * t * t * t;
-
+        // Speed is Lerp(fast, slow, SmoothStep(t)).
         float travel = fastSpeed * clampedElapsed
-            + (slowSpeed - fastSpeed) * duration * integralSmoothStep;
+            + (slowSpeed - fastSpeed) * safeDuration * IntegratedSmoothStep01(t);
 
-        if (elapsed > duration)
-            travel += slowSpeed * (elapsed - duration);
+        if (elapsed > safeDuration)
+            travel += slowSpeed * (elapsed - safeDuration);
 
         return travel;
     }
 
-    private float GetApproachTravelAngle(float slowSpeed, float duration)
+    private float GetDropTravel(float slowSpeed, float duration)
     {
-        // Decelerating from slowSpeed to zero over approachDuration travels half of speed * time.
+        // Drop starts at slow speed and ends at zero.
+        // Integrated distance is half of speed * time.
         return Mathf.Max(1f, slowSpeed * GetPositiveDuration(duration) * 0.5f);
-    }
-
-    private float GetSlowOrbitDuration(float slowSpeed)
-    {
-        float speed = Mathf.Max(1f, slowSpeed);
-        float angle = Mathf.Max(0f, slowOrbitCount) * 360f;
-
-        return Mathf.Max(0.01f, angle / speed);
-    }
-
-    private float GetCcwDistanceToWrappedAngle(float fromUnwrappedDeg, float toWrappedDeg)
-    {
-        float fromWrapped = NormalizeAngle360(fromUnwrappedDeg);
-        float targetWrapped = NormalizeAngle360(toWrappedDeg);
-
-        return NormalizeAngle360(fromWrapped - targetWrapped);
-    }
-
-    private float NormalizeAngle360(float angleDeg)
-    {
-        angleDeg %= 360f;
-
-        if (angleDeg < 0f)
-            angleDeg += 360f;
-
-        return angleDeg;
     }
 
     private float SmoothStep01(float t)
@@ -630,13 +566,30 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
         return t * t * (3f - 2f * t);
     }
 
+    private float IntegratedSmoothStep01(float t)
+    {
+        t = Mathf.Clamp01(t);
+
+        // Integral of 3t^2 - 2t^3.
+        // At t = 1, result is 0.5.
+        return t * t * t - 0.5f * t * t * t * t;
+    }
+
     private float IntegratedDecelerationToStop01(float t)
     {
         t = Mathf.Clamp01(t);
 
-        // Normalized integral of speed = 1 - SmoothStep01(t).
-        // Starts with non-zero velocity and ends with zero velocity.
+        // Normalized integral of speed = 1 - SmoothStep(t).
+        // Starts with non-zero speed and ends with zero speed.
         return 2f * t - 2f * t * t * t + t * t * t * t;
+    }
+
+    private float Remap01(float value, float from, float to)
+    {
+        if (Mathf.Approximately(from, to))
+            return value >= to ? 1f : 0f;
+
+        return Mathf.Clamp01((value - from) / (to - from));
     }
 
     private float EvaluateCurve01(AnimationCurve curve, float t, float fallback)
@@ -647,6 +600,16 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
             return fallback;
 
         return Mathf.Clamp01(curve.Evaluate(t));
+    }
+
+    private float NormalizeAngle360(float angleDeg)
+    {
+        angleDeg %= 360f;
+
+        if (angleDeg < 0f)
+            angleDeg += 360f;
+
+        return angleDeg;
     }
 
     private float GetPositiveDuration(float duration)
@@ -682,18 +645,29 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
 
     private struct SpinPlan
     {
-        public float AccelerationDuration;
-        public float WheelDecelerationDuration;
+        public float WheelStopDuration;
+        public float FinalWheelAngleDeg;
+
+        public float BallAccelerationDuration;
         public float BallDecelerationDuration;
-        public float DecelerationPhaseDuration;
         public float BallFastSpeedDegPerSecond;
         public float BallSlowSpeedDegPerSecond;
-        public float FinalWheelAngleDeg;
-        public float ApproachTravelAngleDeg;
-        public float ApproachStartWrappedAngleDeg;
-        public float AlignmentTravelAngleDeg;
+
+        public float AccelerationTravelDeg;
+        public float DecelerationTravelDeg;
+        public float AlignmentTravelDeg;
         public float AlignmentDuration;
+        public float SlowOrbitTravelDeg;
         public float SlowOrbitDuration;
+
+        public float DropDuration;
+        public float DropTravelDeg;
+        public float DropStartTime;
+
+        public float TargetPocketAngleDeg;
+        public float TargetBallAngleDeg;
+
+        public float TotalDurationBeforeSettle;
         public float TotalDuration;
     }
 }
