@@ -74,6 +74,7 @@ public class TableGameControls3DView : MonoBehaviour
         try
         {
             gameFlowController.Spin(slotId);
+            winningSlotInput.SetTextWithoutNotify(string.Empty);
         }
         catch (System.Exception exception)
         {

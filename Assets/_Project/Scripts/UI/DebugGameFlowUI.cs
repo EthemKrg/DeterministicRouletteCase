@@ -161,6 +161,8 @@ public class DebugGameFlowUI : MonoBehaviour
         try
         {
             gameFlowController.Spin(slotId);
+            winningSlotInput.SetTextWithoutNotify(string.Empty);
+            UpdateActionButtons();
         }
         catch (Exception exception)
         {

@@ -13,34 +13,17 @@ public class WinningNumberDisplayController : MonoBehaviour
 
     [Header("Slide Animation")]
     [SerializeField] private float slideOffsetY = 100f;
-    [SerializeField] private AnimationCurve slideInCurve = new AnimationCurve(
-        new Keyframe(0f, 0f),
-        new Keyframe(1f, 1f)
-    );
-    [SerializeField] private AnimationCurve slideOutCurve = new AnimationCurve(
-        new Keyframe(0f, 1f),
-        new Keyframe(1f, 0f)
-    );
+    [SerializeField] private AnimationCurve slideInCurve = new AnimationCurve();
+    [SerializeField] private AnimationCurve slideOutCurve = new AnimationCurve();
     [SerializeField] private float slideDuration = 0.4f;
 
     [Header("Text Scale Bounce")]
-    [SerializeField] private AnimationCurve scaleCurve = new AnimationCurve(
-        new Keyframe(0.00f, 0f),
-        new Keyframe(0.50f, 1.4f),
-        new Keyframe(0.75f, 0.9f),
-        new Keyframe(1.00f, 1f)
-    );
+    [SerializeField] private AnimationCurve scaleCurve = new AnimationCurve();
     [SerializeField] private float scaleDuration = 0.5f;
 
     [Header("Background Panel Scale")]
-    [SerializeField] private AnimationCurve bgScaleInCurve = new AnimationCurve(
-        new Keyframe(0f, 0f),
-        new Keyframe(1f, 1f)
-    );
-    [SerializeField] private AnimationCurve bgScaleOutCurve = new AnimationCurve(
-        new Keyframe(0f, 1f),
-        new Keyframe(1f, 0f)
-    );
+    [SerializeField] private AnimationCurve bgScaleInCurve = new AnimationCurve();
+    [SerializeField] private AnimationCurve bgScaleOutCurve = new AnimationCurve();
     [SerializeField] private float bgScaleDuration = 0.4f;
 
     [Header("Display & Fade")]
@@ -171,7 +154,7 @@ public class WinningNumberDisplayController : MonoBehaviour
             float t = Mathf.Clamp01(elapsed / fadeOutDuration);
 
             Vector2 pos = originalAnchoredPosition;
-            pos.y += Mathf.Lerp(0f, slideOffsetY, slideOutCurve.Evaluate(t));
+            pos.y += Mathf.Lerp(slideOffsetY, 0f, slideOutCurve.Evaluate(t));
             backgroundPanel.anchoredPosition = pos;
 
             backgroundPanel.localScale = Vector3.one * bgScaleOutCurve.Evaluate(t);

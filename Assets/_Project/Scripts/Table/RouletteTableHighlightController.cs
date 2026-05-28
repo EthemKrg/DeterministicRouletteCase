@@ -15,7 +15,6 @@ public class RouletteTableHighlightController : MonoBehaviour
 
     [Header("Winning Marker")]
     [SerializeField] private GameObject winningMarkerPrefab;
-    [SerializeField] private Transform winningMarkerRoot;
     [SerializeField] private Vector3 markerOffset = Vector3.zero;
 
     private readonly Dictionary<string, RouletteNumberArea> numberAreasBySlotId = new Dictionary<string, RouletteNumberArea>();
@@ -112,15 +111,10 @@ public class RouletteTableHighlightController : MonoBehaviour
 
         var position = target.position + markerOffset;
 
+        winningMarkerInstance.SetActive(false);
         winningMarkerInstance.transform.position = position;
         winningMarkerInstance.transform.rotation = target.rotation;
         winningMarkerInstance.SetActive(true);
-    }
-
-    public void HideWinningMarker()
-    {
-        if (winningMarkerInstance != null)
-            winningMarkerInstance.SetActive(false);
     }
 
     private void HandleRoundResolved(RoundResult result)
@@ -155,21 +149,8 @@ public class RouletteTableHighlightController : MonoBehaviour
         if (winningMarkerPrefab == null)
             throw new System.InvalidOperationException("Winning marker prefab is not assigned.");
 
-        Transform root = winningMarkerRoot != null ? winningMarkerRoot : transform;
-
-        winningMarkerInstance = Instantiate(winningMarkerPrefab, root);
-        winningMarkerInstance.name = "WinningMarker";
+        winningMarkerInstance = Instantiate(winningMarkerPrefab);
         winningMarkerInstance.SetActive(false);
-
-        DisableMarkerColliders(winningMarkerInstance);
-    }
-
-    private static void DisableMarkerColliders(GameObject marker)
-    {
-        Collider[] colliders = marker.GetComponentsInChildren<Collider>(true);
-
-        foreach (Collider collider in colliders)
-            collider.enabled = false;
     }
 
     public void HighlightTableButton(TableGameControls3DButton button)
