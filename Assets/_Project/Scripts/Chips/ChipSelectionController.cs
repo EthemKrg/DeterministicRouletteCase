@@ -50,4 +50,22 @@ public class ChipSelectionController : MonoBehaviour
         selectedChip = defaultChip;
         OnSelectedChipChanged?.Invoke(SelectedChipValue);
     }
+
+    public int ExportSelectedChipValue()
+    {
+        return SelectedChipValue;
+    }
+
+    public void RestoreSelectedChip(int chipValue)
+    {
+        if (Enum.IsDefined(typeof(ChipDenomination), chipValue))
+        {
+            SetSelectedChip((ChipDenomination)chipValue);
+        }
+        else
+        {
+            Debug.LogWarning($"Saved chip value {chipValue} is not a valid denomination. Falling back to default.");
+            SelectDefaultChip();
+        }
+    }
 }

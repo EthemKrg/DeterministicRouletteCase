@@ -55,4 +55,37 @@ public class PlayerStatistics
         LastWinningSlotId = string.Empty;
         LastRoundNetProfit = 0;
     }
+
+    public StatisticsSaveData ExportSnapshot()
+    {
+        return new StatisticsSaveData
+        {
+            totalSpins = TotalSpins,
+            totalWins = TotalWins,
+            totalLosses = TotalLosses,
+            totalProfitLoss = TotalProfitLoss,
+            totalWagered = TotalWagered,
+            bestRoundNetProfit = BestRoundNetProfit,
+            lastWinningSlotId = LastWinningSlotId ?? string.Empty,
+            lastRoundNetProfit = LastRoundNetProfit
+        };
+    }
+
+    public void RestoreFromSnapshot(StatisticsSaveData data)
+    {
+        if (data == null)
+        {
+            Reset();
+            return;
+        }
+
+        TotalSpins = data.totalSpins;
+        TotalWins = data.totalWins;
+        TotalLosses = data.totalLosses;
+        TotalProfitLoss = data.totalProfitLoss;
+        TotalWagered = data.totalWagered;
+        BestRoundNetProfit = data.bestRoundNetProfit;
+        LastWinningSlotId = data.lastWinningSlotId ?? string.Empty;
+        LastRoundNetProfit = data.lastRoundNetProfit;
+    }
 }

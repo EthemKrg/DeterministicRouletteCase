@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class ChipStackViewController : MonoBehaviour
@@ -278,5 +280,79 @@ public class ChipStackViewController : MonoBehaviour
         }
 
         pendingChipsByArea[betArea] = pendingCount;
+    }
+
+    public void RestoreActiveBets(IReadOnlyList<RouletteBet> activeBets, RouletteWheelType wheelType)
+    {
+        if (activeBets == null || activeBets.Count == 0)
+        {
+            ClearAll();
+            return;
+        }
+
+        stackVisualVersion++;
+        RouletteBetArea[] allAreas = UnityEngine.Object.FindObjectsOfType<RouletteBetArea>();
+
+        foreach (RouletteBet bet in activeBets)
+        {
+            if (bet == null)
+                continue;
+
+            ChipDenomination denomination = InferDenomination(bet.Stake);
+            RouletteBetArea match = FindMatchingBetArea(bet, allAreas, wheelType);
+
+            if (match == null)
+            {
+                Debug.LogWarning($"Could not find matching bet area for bet: {bet.Type} stake={bet.Stake}. Skipping visual restore.");
+                continue;
+            }
+
+            ShowOrUpdateStack(match, denomination, bet.Stake, stackVisualVersion);
+        }
+    }
+
+    private static ChipDenomination InferDenomination(int stake)
+    {
+        if (Enum.IsDefined(typeof(ChipDenomination), stake))
+            return (ChipDenomination)stake;
+
+        Debug.LogWarning($"Stake value {stake} does not match a known denomination. Using Chip250 as fallback.");
+        return ChipDenomination.Chip250;
+    }
+
+    private static RouletteBetArea FindMatchingBetArea(RouletteBet savedBet, RouletteBetArea[] allAreas, RouletteWheelType wheelType)
+    {
+        foreach (RouletteBetArea area in allAreas)
+        {
+            if (area == null || !area.IsAvailableForWheelType(wheelType))
+                continue;
+
+            RouletteBet probeBet = area.CreateBet(savedBet.Stake, wheelType);
+
+            if (BetsMatch(probeBet, savedBet))
+                return area;
+        }
+
+        return null;
+    }
+
+    private static bool BetsMatch(RouletteBet first, RouletteBet second)
+    {
+        if (first == null || second == null)
+            return false;
+
+        if (first.Type != second.Type)
+            return false;
+
+        if (first.CoveredSlotIds.Count != second.CoveredSlotIds.Count)
+            return false;
+
+        for (int i = 0; i < first.CoveredSlotIds.Count; i++)
+        {
+            if (first.CoveredSlotIds[i] != second.CoveredSlotIds[i])
+                return false;
+        }
+
+        return true;
     }
 }

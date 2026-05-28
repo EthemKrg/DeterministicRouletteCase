@@ -290,4 +290,64 @@ public class GameFlowController : MonoBehaviour
 
         return $"{min}-{max}";
     }
+
+    public SaveGameData ExportSaveData()
+    {
+        SaveGameData data = new SaveGameData();
+        data.version = 1;
+
+        data.gameState = GameState.ExportSnapshot();
+        data.overallStats = StatisticsTracker.ExportOverallSnapshot();
+        data.europeanStats = StatisticsTracker.ExportEuropeanSnapshot();
+        data.americanStats = StatisticsTracker.ExportAmericanSnapshot();
+
+        if (LastRoundResult != null)
+        {
+            data.lastRound = new LastRoundSaveData
+            {
+                winningSlotId = LastRoundResult.WinningSlot?.Id ?? string.Empty,
+                wheelType = GameState.WheelType.ToString(),
+                totalStake = LastRoundResult.TotalStake,
+                totalReturn = LastRoundResult.TotalReturn,
+                netProfit = LastRoundResult.NetProfit,
+                winningBetCount = LastRoundResult.GetWinningBets().Count,
+                losingBetCount = LastRoundResult.GetLosingBets().Count
+            };
+        }
+
+        return data;
+    }
+
+    public void RestoreFromSave(SaveGameData saveData)
+    {
+        if (saveData == null)
+            throw new ArgumentNullException(nameof(saveData));
+
+        if (saveData.gameState == null)
+            throw new ArgumentException("Save data has no game state.");
+
+        GameState.RestoreSnapshot(saveData.gameState);
+
+        StatisticsTracker.RestoreFromSnapshots(
+            saveData.overallStats,
+            saveData.europeanStats,
+            saveData.americanStats);
+
+        LastRoundResult = null;
+        StopAllCoroutines();
+    }
+
+    public void ClearSaveData()
+    {
+        GameState = new RouletteGameState();
+        StatisticsTracker = new StatisticsTracker();
+        LastRoundResult = null;
+        StopAllCoroutines();
+    }
+
+
+    public System.Collections.Generic.IReadOnlyList<RouletteBet> GetActiveBetsForSnapshot()
+    {
+        return GameState.ActiveBets;
+    }
 }

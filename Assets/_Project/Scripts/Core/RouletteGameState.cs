@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public class RouletteGameState
 {
@@ -155,5 +157,86 @@ public class RouletteGameState
         }
 
         return true;
+    }
+
+    public GameStateSaveData ExportSnapshot()
+    {
+        BetSaveData[] betData = new BetSaveData[activeBets.Count];
+
+        for (int i = 0; i < activeBets.Count; i++)
+        {
+            RouletteBet bet = activeBets[i];
+            betData[i] = new BetSaveData
+            {
+                betType = bet.Type.ToString(),
+                stake = bet.Stake,
+                coveredSlotIds = bet.CoveredSlotIds.ToArray()
+            };
+        }
+
+        return new GameStateSaveData
+        {
+            currentChips = CurrentChips,
+            wheelType = WheelType.ToString(),
+            activeBets = betData
+        };
+    }
+
+    public void RestoreSnapshot(GameStateSaveData snapshot)
+    {
+        if (snapshot == null)
+            throw new ArgumentNullException(nameof(snapshot));
+
+        if (snapshot.currentChips < 0)
+            throw new ArgumentException($"Invalid current chips: {snapshot.currentChips}");
+
+        if (!Enum.TryParse(snapshot.wheelType, out RouletteWheelType parsedWheelType))
+            throw new ArgumentException($"Invalid wheel type: {snapshot.wheelType}");
+
+        activeBets.Clear();
+        WheelType = parsedWheelType;
+
+        if (snapshot.activeBets != null && snapshot.activeBets.Length > 0)
+        {
+            foreach (BetSaveData betData in snapshot.activeBets)
+            {
+                ValidateAndAddBet(betData);
+            }
+        }
+
+        if (TotalActiveStake > MaxTotalActiveBet)
+        {
+            activeBets.Clear();
+            throw new InvalidOperationException(
+                $"Total active stake ({TotalActiveStake}) exceeds maximum ({MaxTotalActiveBet}).");
+        }
+
+        CurrentChips = snapshot.currentChips;
+        FlowState = GameFlowState.Betting;
+    }
+
+    private void ValidateAndAddBet(BetSaveData betData)
+    {
+        if (betData == null)
+            throw new ArgumentException("Bet data is null.");
+
+        if (betData.stake <= 0)
+            throw new ArgumentException($"Invalid bet stake: {betData.stake}");
+
+        if (!Enum.TryParse(betData.betType, out BetType parsedType))
+            throw new ArgumentException($"Invalid bet type: {betData.betType}");
+
+        if (betData.coveredSlotIds == null || betData.coveredSlotIds.Length == 0)
+            throw new ArgumentException($"Bet of type {betData.betType} has no covered slot IDs.");
+
+        foreach (string slotId in betData.coveredSlotIds)
+        {
+            RouletteSlot slot = RouletteWheelData.GetSlotById(slotId, WheelType);
+            if (slot == null)
+                throw new ArgumentException($"Slot '{slotId}' is not valid for {WheelType} roulette.");
+        }
+
+        RouletteBet restoredBet = new RouletteBet(parsedType, betData.stake, betData.coveredSlotIds);
+        activeBets.Add(restoredBet);
     }
 }

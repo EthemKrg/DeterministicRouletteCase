@@ -35,4 +35,26 @@ public class StatisticsTracker
         EuropeanStatistics.Reset();
         AmericanStatistics.Reset();
     }
+
+    public StatisticsSaveData ExportOverallSnapshot()
+    {
+        return Statistics.ExportSnapshot();
+    }
+
+    public StatisticsSaveData ExportEuropeanSnapshot()
+    {
+        return EuropeanStatistics.ExportSnapshot();
+    }
+
+    public StatisticsSaveData ExportAmericanSnapshot()
+    {
+        return AmericanStatistics.ExportSnapshot();
+    }
+
+    public void RestoreFromSnapshots(StatisticsSaveData overall, StatisticsSaveData european, StatisticsSaveData american)
+    {
+        Statistics.RestoreFromSnapshot(overall);
+        EuropeanStatistics.RestoreFromSnapshot(european);
+        AmericanStatistics.RestoreFromSnapshot(american);
+    }
 }
