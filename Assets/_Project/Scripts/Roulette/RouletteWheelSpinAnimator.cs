@@ -18,10 +18,15 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
     [Header("Animation Curves")]
     [SerializeField] private AnimationCurve wheelSpinCurve = new AnimationCurve(
         new Keyframe(0.00f, 0.00f),
-        new Keyframe(0.50f, 0.70f),
+        new Keyframe(0.70f, 0.85f),
         new Keyframe(1.00f, 1.00f)
     );
-    [SerializeField] private AnimationCurve ballOrbitCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 0f);
+    [SerializeField] private AnimationCurve ballOrbitCurve = new AnimationCurve(
+        new Keyframe(0.00f, 1.00f),
+        new Keyframe(0.30f, 0.95f),
+        new Keyframe(0.70f, 0.60f),
+        new Keyframe(1.00f, 0.00f)
+    );
     [SerializeField] private AnimationCurve ballDropCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
     [Header("Timing")]
@@ -29,6 +34,8 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
     [SerializeField] private float mainSpinDuration = 2.5f;
     [SerializeField] private float coastDuration = 1.5f;
     [SerializeField] private float dropDuration = 0.8f;
+    [SerializeField] private float settleDuration = 0.4f;
+    [SerializeField] private float ballPositionDuration = 0.3f;
 
     [Header("Spin Speeds")]
     [SerializeField] private float wheelSpinCount = 4f;
@@ -42,6 +49,11 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
     [SerializeField] private float orbitWobbleAmplitude = 0.03f;
     [SerializeField] private float orbitWobbleFrequency = 4f;
     [SerializeField] private float defaultOrbitRadius = 1.5f;
+
+    [Header("Random Variation")]
+    [SerializeField] private float spinCountVariation = 1f;
+    [SerializeField] private float orbitCountVariation = 1.5f;
+    [SerializeField] private float durationVariation = 0.5f;
 
     private Transform[] euPocketTransforms;
     private Transform[] usPocketTransforms;
@@ -81,10 +93,17 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
 
     public IEnumerator AnimateSpin(RouletteSlot winningSlot)
     {
-        yield return SpinRoutine();                    // Phase 0: wheel warmup
-        yield return BallReleaseRoutine(winningSlot);  // Phase 1: ball released, both spin
-        yield return CoastRoutine(winningSlot);        // Phase 2: wheel stopped, ball coasts
-        yield return DropRoutine(winningSlot);         // Phase 3: ball drops into pocket
+        // Apply random variation for this spin
+        float effectiveWheelSpinCount = wheelSpinCount + Random.Range(-spinCountVariation, spinCountVariation);
+        float effectiveBallOrbitCount = ballOrbitCount + Random.Range(-orbitCountVariation, orbitCountVariation);
+        float effectiveMainSpinDuration = mainSpinDuration + Random.Range(-durationVariation, durationVariation);
+
+        yield return SpinRoutine();                                                    // Phase 0: wheel warmup
+        yield return BallReleaseRoutine(winningSlot, effectiveWheelSpinCount,          // Phase 1: ball released, both spin
+            effectiveBallOrbitCount, effectiveMainSpinDuration);
+        yield return CoastRoutine(winningSlot);                                        // Phase 2: wheel stopped, ball coasts
+        yield return DropRoutine(winningSlot);                                         // Phase 3: ball drops into pocket
+        yield return SettleRoutine();                                                  // Phase 4: ball settles in pocket
     }
 
     /// <summary>
@@ -122,51 +141,98 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
     /// <summary>
     /// Phase 1: Main spin — ball is released near opposite side of target pocket.
     /// Wheel continues spinning (decelerating). Ball orbits counter-clockwise (decelerating).
+    /// 
+    /// Sub-phase 1a: Ball transitions from its scene position to the release position.
+    /// Sub-phase 1b: Main orbital spin with wheel deceleration.
     /// </summary>
-    private IEnumerator BallReleaseRoutine(RouletteSlot winningSlot)
+    private IEnumerator BallReleaseRoutine(RouletteSlot winningSlot,
+        float effectiveWheelSpinCount, float effectiveBallOrbitCount, float effectiveMainSpinDuration)
     {
-        float elapsed = 0f;
-        float totalWheelAngle = 360f * wheelSpinCount;
-        float startWheelAngle = wheelWarmupForwardAngle;
+        // The wheel keeps spinning continuously through both sub-phases.
+        // Sub-phase 1a adds extra rotation during ball reposition + wheel ramp-up.
+        const float SUB1A_WHEEL_RAMP_ANGLE = 30f;
 
-        // Place ball near opposite side of target pocket with random offset
+        float totalWheelAngle = 360f * effectiveWheelSpinCount;
+        float startWheelAngle = wheelWarmupForwardAngle + SUB1A_WHEEL_RAMP_ANGLE;
+
+        // Determine target pocket and release angle
         Transform targetPocket = GetPocketForSlot(winningSlot);
         Vector3 localTarget = wheelSpace.InverseTransformPoint(targetPocket.position);
         float targetAngle = Mathf.Atan2(localTarget.z, localTarget.x);
         float randomOffset = Random.Range(-0.3f, 0.3f);
         float releaseAngle = targetAngle + Mathf.PI + randomOffset;
 
-        // Validate orbit radius — if ball is at origin, use default fallback
-        float orbitRadius = new Vector3(ball.localPosition.x, 0f, ball.localPosition.z).magnitude;
-        if (orbitRadius < 0.01f)
-            orbitRadius = defaultOrbitRadius;
+        // Read ball's current scene position
+        Vector3 startLocalPos = ball.localPosition;
+        float startOrbitRadius = new Vector3(startLocalPos.x, 0f, startLocalPos.z).magnitude;
+        float startAngle = Mathf.Atan2(startLocalPos.z, startLocalPos.x);
+        float startY = startLocalPos.y;
 
+        // If ball is at origin, use default radius
+        if (startOrbitRadius < 0.01f)
+            startOrbitRadius = defaultOrbitRadius;
+
+        float targetOrbitRadius = startOrbitRadius;
+
+        // --- SUB-PHASE 1a: Transition ball from scene position to release position ---
+        // Wheel continues rotating (gentle ramp from warmup into main spin).
+        float positionElapsed = 0f;
+
+        while (positionElapsed < ballPositionDuration)
+        {
+            float t = positionElapsed / ballPositionDuration;
+            float curveValue = Mathf.SmoothStep(0f, 1f, t);
+
+            // Angle: startAngle → releaseAngle (in radians)
+            float currentAngle = Mathf.LerpAngle(startAngle * Mathf.Rad2Deg, releaseAngle * Mathf.Rad2Deg, curveValue) * Mathf.Deg2Rad;
+            // Radius: startOrbitRadius → targetOrbitRadius
+            float currentRadius = Mathf.Lerp(startOrbitRadius, targetOrbitRadius, curveValue);
+            // Y: startY → spinHeight
+            float currentY = Mathf.Lerp(startY, spinHeight, curveValue);
+
+            ball.localPosition = new Vector3(
+                Mathf.Cos(currentAngle) * currentRadius,
+                currentY,
+                Mathf.Sin(currentAngle) * currentRadius
+            );
+
+            // Wheel: gentle ramp from warmup angle toward main spin start
+            float wheelRamp = Mathf.Lerp(0f, SUB1A_WHEEL_RAMP_ANGLE, curveValue);
+            float curWheelAngle = wheelWarmupForwardAngle + wheelRamp;
+            wheelSpace.localRotation = initialWheelRotation * Quaternion.Euler(0f, curWheelAngle, 0f);
+
+            positionElapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        // Snap to exact release position
         ball.localPosition = new Vector3(
-            Mathf.Cos(releaseAngle) * orbitRadius,
+            Mathf.Cos(releaseAngle) * targetOrbitRadius,
             spinHeight,
-            Mathf.Sin(releaseAngle) * orbitRadius
+            Mathf.Sin(releaseAngle) * targetOrbitRadius
         );
 
-        float orbitAngle = releaseAngle;
-        float totalOrbitAngle = 360f * ballOrbitCount;
+        // --- SUB-PHASE 1b: Main orbital spin ---
+        float elapsed = 0f;
+        float totalOrbitAngle = 360f * effectiveBallOrbitCount;
 
-        while (elapsed < mainSpinDuration)
+        while (elapsed < effectiveMainSpinDuration)
         {
-            float t = elapsed / mainSpinDuration;
+            float t = elapsed / effectiveMainSpinDuration;
 
             // Wheel: continues from warmup, decelerating
             float wheelCurve = wheelSpinCurve.Evaluate(t);
             float wheelAngle = startWheelAngle + totalWheelAngle * wheelCurve;
             wheelSpace.localRotation = initialWheelRotation * Quaternion.Euler(0f, wheelAngle, 0f);
 
-            // Ball: orbiting counter-clockwise, decelerating
+            // Ball: orbiting counter-clockwise, decelerating (cumulative — framerate independent)
             float orbitProgress = ballOrbitCurve.Evaluate(t);
-            float deltaAngle = -totalOrbitAngle * orbitProgress * (Time.deltaTime / mainSpinDuration);
-            orbitAngle += deltaAngle;
+            float currentOrbitAngle = -totalOrbitAngle * orbitProgress;
+            float orbitAngle = releaseAngle + currentOrbitAngle;
 
             // Radius wobble
             float wobble = 1f + orbitWobbleAmplitude * Mathf.Sin(orbitWobbleFrequency * elapsed);
-            float currentRadius = orbitRadius * wobble;
+            float currentRadius = targetOrbitRadius * wobble;
 
             ball.localPosition = new Vector3(
                 Mathf.Cos(orbitAngle) * currentRadius,
@@ -180,7 +246,9 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
 
         // Finalize wheel
         float finalWheelAngle = startWheelAngle + totalWheelAngle;
+        // The main spin already sets the wheel at this angle, but ensure precision snap
         wheelSpace.localRotation = initialWheelRotation * Quaternion.Euler(0f, finalWheelAngle, 0f);
+        // Note: wheel ends at wheelWarmupForwardAngle + SUB1A_WHEEL_RAMP_ANGLE + totalWheelAngle
     }
 
     /// <summary>
@@ -213,8 +281,9 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
             // Guaranteed to reach exactly targetAngle at progress=1
             float currentAngle = startAngle + angleDiff * easedProgress;
 
-            // Dampened wobble (reaches zero at end)
-            float wobble = 1f + orbitWobbleAmplitude * Mathf.Sin(orbitWobbleFrequency * Time.time) * (1f - progress);
+            // Dampened wobble (reaches zero at end) — uses progress-based phase for pause/resume safety
+            float wobblePhase = progress * coastDuration * orbitWobbleFrequency;
+            float wobble = 1f + orbitWobbleAmplitude * Mathf.Sin(wobblePhase) * (1f - progress);
             float currentRadius = orbitRadius * wobble;
 
             ball.localPosition = new Vector3(
@@ -281,6 +350,28 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
 
         // Final snap in local space (matches local-space interpolation)
         ball.localPosition = localTarget;
+    }
+
+    /// <summary>
+    /// Phase 4: Settle — small damped bounce/oscillation in the pocket.
+    /// </summary>
+    private IEnumerator SettleRoutine()
+    {
+        float elapsed = 0f;
+        Vector3 startPos = ball.position;
+        float bounceHeight = 0.02f;
+
+        while (elapsed < settleDuration)
+        {
+            float t = elapsed / settleDuration;
+            float heightOffset = Mathf.Sin(t * Mathf.PI * 3f) * bounceHeight * (1f - t);
+            ball.position = startPos + Vector3.up * heightOffset;
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        ball.position = startPos;
     }
 
     private Transform GetPocketForSlot(RouletteSlot slot)
