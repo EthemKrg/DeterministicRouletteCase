@@ -291,7 +291,7 @@ public class ChipStackViewController : MonoBehaviour
         }
 
         stackVisualVersion++;
-        RouletteBetArea[] allAreas = UnityEngine.Object.FindObjectsOfType<RouletteBetArea>();
+        RouletteBetArea[] allAreas = FindObjectsByType<RouletteBetArea>();
 
         foreach (RouletteBet bet in activeBets)
         {
