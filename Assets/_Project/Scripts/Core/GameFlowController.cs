@@ -50,7 +50,7 @@ public class GameFlowController : MonoBehaviour
             return;
         }
 
-        if (Time.unscaledTime < pendingSpinSession.CompleteAt)
+        if (Time.time < pendingSpinSession.CompleteAt)
             return;
 
         CompleteSpinSession();
@@ -161,7 +161,7 @@ public class GameFlowController : MonoBehaviour
         RoundResult pendingResult = BetResolver.Resolve(winningSlot, GameState.ActiveBets);
         float visualDuration = StartSpinVisual(winningSlot);
 
-        pendingSpinSession = new SpinSession(pendingResult, Time.unscaledTime + visualDuration);
+        pendingSpinSession = new SpinSession(pendingResult, Time.time + visualDuration);
 
         GameState.SetFlowState(GameFlowState.Spinning);
         NotifyStateChanged();

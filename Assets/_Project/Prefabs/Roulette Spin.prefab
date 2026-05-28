@@ -2343,11 +2343,11 @@ Transform:
   m_GameObject: {fileID: 1042341211029000407}
   serializedVersion: 2
   m_LocalRotation: {x: 0.0000002682209, y: -0.7071067, z: -0.7071068, w: -0.0000002682209}
-  m_LocalPosition: {x: 0, y: 1.9799999, z: 0}
-  m_LocalScale: {x: 0.623007, y: 0.6230069, z: 0.43352094}
+  m_LocalPosition: {x: 0, y: -0.03700006, z: 0}
+  m_LocalScale: {x: 0.623007, y: 0.6230068, z: 0.43352094}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 6959171937565274234}
+  m_Father: {fileID: 8038071845527417909}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &8477675038735241740
 MeshFilter:
@@ -8032,11 +8032,11 @@ Transform:
   m_GameObject: {fileID: 2629963275402818485}
   serializedVersion: 2
   m_LocalRotation: {x: 0.0000002682209, y: -0.7071067, z: -0.7071068, w: -0.0000002682209}
-  m_LocalPosition: {x: 0, y: 2.1, z: 0}
+  m_LocalPosition: {x: 0, y: 0.082999945, z: 0}
   m_LocalScale: {x: 0.8908365, y: 0.8908364, z: 3.0428712}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 6959171937565274234}
+  m_Father: {fileID: 8038071845527417909}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &2793658311176005272
 MeshFilter:
@@ -8425,11 +8425,11 @@ Transform:
   m_GameObject: {fileID: 2804912110588142903}
   serializedVersion: 2
   m_LocalRotation: {x: 0.0000002682209, y: -0.7071067, z: -0.7071068, w: -0.0000002682209}
-  m_LocalPosition: {x: 0, y: 2.0864, z: 0}
+  m_LocalPosition: {x: 0, y: 0.06940007, z: 0}
   m_LocalScale: {x: 0.75633997, y: 0.7563399, z: 1.9720806}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 6959171937565274234}
+  m_Father: {fileID: 8038071845527417909}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &1410401508000770666
 MeshFilter:
@@ -11429,11 +11429,11 @@ Transform:
   m_GameObject: {fileID: 3850563439535490385}
   serializedVersion: 2
   m_LocalRotation: {x: 0.0000002682209, y: -0.7071067, z: -0.7071068, w: -0.0000002682209}
-  m_LocalPosition: {x: 0, y: 2.084, z: 0}
-  m_LocalScale: {x: 0.53876746, y: 0.5387674, z: 0.26676878}
+  m_LocalPosition: {x: 0, y: 0.06700015, z: 0}
+  m_LocalScale: {x: 0.53876746, y: 0.53876734, z: 0.26676875}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 6959171937565274234}
+  m_Father: {fileID: 8038071845527417909}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &6095868535212757997
 MeshFilter:
@@ -15528,11 +15528,11 @@ Transform:
   m_GameObject: {fileID: 4893318839891915217}
   serializedVersion: 2
   m_LocalRotation: {x: 0.0000002682209, y: -0.7071067, z: -0.7071068, w: -0.0000002682209}
-  m_LocalPosition: {x: 0, y: 2.0919204, z: 0}
-  m_LocalScale: {x: 0.7974547, y: 0.7974546, z: 2.100017}
+  m_LocalPosition: {x: 0, y: 0.074920416, z: 0}
+  m_LocalScale: {x: 0.7974547, y: 0.7974546, z: 2.1000168}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 6959171937565274234}
+  m_Father: {fileID: 8038071845527417909}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &8283185191795641341
 MeshFilter:
@@ -17098,6 +17098,46 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 8348870697927428268}
   m_maskType: 0
+--- !u!1 &5445085566359309247
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8038071845527417909}
+  m_Layer: 0
+  m_Name: 'wheelSpace '
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8038071845527417909
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5445085566359309247}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6227068178676418425}
+  - {fileID: 3872961059198925404}
+  - {fileID: 7426655268614495877}
+  - {fileID: 5361734728596632783}
+  - {fileID: 5084231236874202896}
+  - {fileID: 3844437924702567880}
+  - {fileID: 4301982037512912674}
+  - {fileID: 2849069061441258648}
+  - {fileID: 8745160699621222507}
+  m_Father: {fileID: 5386953675648094023}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5469923967124693958
 GameObject:
   m_ObjectHideFlags: 0
@@ -19785,11 +19825,11 @@ Transform:
   m_GameObject: {fileID: 6085780160307476159}
   serializedVersion: 2
   m_LocalRotation: {x: 0.000000026352339, y: -1, z: 0.00000046391807, w: -0.00000035762787}
-  m_LocalPosition: {x: 0, y: 2.2165, z: 0}
+  m_LocalPosition: {x: 0, y: 0.19950008, z: 0}
   m_LocalScale: {x: 0.07999999, y: 0.06642894, z: 0.07999999}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 6959171937565274234}
+  m_Father: {fileID: 8038071845527417909}
   m_LocalEulerAnglesHint: {x: -180, y: 0, z: 180}
 --- !u!33 &3773494905061603173
 MeshFilter:
@@ -21232,14 +21272,14 @@ Transform:
   m_GameObject: {fileID: 6565090172411187141}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.69494003, y: 0.51699996, z: 0.5847199}
+  m_LocalPosition: {x: 0.6949401, y: -1.5, z: 0.5847199}
   m_LocalScale: {x: 0.75309044, y: 0.7530905, z: 0.75309044}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2997386430305861724}
   - {fileID: 1818245359437831025}
   - {fileID: 7839697898412654002}
-  m_Father: {fileID: 6959171937565274234}
+  m_Father: {fileID: 8038071845527417909}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6587490875046421187
 GameObject:
@@ -22644,47 +22684,6 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 1412240581232583605}
   m_maskType: 0
---- !u!1 &6914147132194158769
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6959171937565274234}
-  m_Layer: 0
-  m_Name: 'wheelSpace '
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6959171937565274234
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6914147132194158769}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -2.017, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 6227068178676418425}
-  - {fileID: 3872961059198925404}
-  - {fileID: 7426655268614495877}
-  - {fileID: 5361734728596632783}
-  - {fileID: 5084231236874202896}
-  - {fileID: 3844437924702567880}
-  - {fileID: 4301982037512912674}
-  - {fileID: 2849069061441258648}
-  - {fileID: 8745160699621222507}
-  - {fileID: 7076472494704686907}
-  m_Father: {fileID: 5386953675648094023}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6958931486194504232
 GameObject:
   m_ObjectHideFlags: 0
@@ -23194,14 +23193,14 @@ Transform:
   m_GameObject: {fileID: 7079828508481713189}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.121779986, z: 0}
+  m_LocalPosition: {x: 0, y: -1.8952199, z: 0}
   m_LocalScale: {x: 0.92928994, y: 0.92929, z: 0.92928994}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1053264908339798290}
   - {fileID: 1459263961883824531}
   - {fileID: 8105577868388456680}
-  m_Father: {fileID: 6959171937565274234}
+  m_Father: {fileID: 8038071845527417909}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7082145325400053488
 GameObject:
@@ -27561,9 +27560,10 @@ Transform:
   m_LocalScale: {x: 4, y: 4, z: 4}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6959171937565274234}
+  - {fileID: 8038071845527417909}
   - {fileID: 2200318272286611524}
   - {fileID: 3642224538800946866}
+  - {fileID: 7076472494704686907}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: -198.929, z: 0}
 --- !u!114 &2444142331159910896
@@ -27578,13 +27578,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2d9a58ce595804f46b63f6eadc866206, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RouletteWheelSpinAnimator
-  wheelSpace: {fileID: 6959171937565274234}
+  wheelSpace: {fileID: 0}
   ball: {fileID: 7076472494704686907}
   euWheelRoot: {fileID: 6565090172411187141}
   usWheelRoot: {fileID: 7079828508481713189}
   euPocketParent: {fileID: 1818245359437831025}
   usPocketParent: {fileID: 1053264908339798290}
-  wheelSpinCurve:
+  wheelAccelDuration: 1.5
+  wheelTotalRotations: 4
+  ballTotalOrbits: 6
+  wheelAccelCurve:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
@@ -27597,8 +27600,148 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
-      time: 0.7
-      value: 0.85
+      time: 1
+      value: 1
+      inSlope: 0.2
+      outSlope: 0.2
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  ballAccelCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  wheelDecelDuration: 2.5
+  wheelDecelRotations: 3
+  ballDecelDelay: 0.5
+  ballDecelDuration: 3
+  wheelDecelCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 2
+      outSlope: 2
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  ballDecelCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  approachDuration: 1.5
+  approachRadiusCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 2
+      outSlope: 2
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  approachHeightCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 2
+      outSlope: 2
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  approachAngleCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -27617,71 +27760,14 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  ballOrbitCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1.0000007
-      value: 0.01408428
-      inSlope: -2.7047167
-      outSlope: -2.7047167
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.12292429
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  ballDropCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1.0000007
-      value: 0.01408428
-      inSlope: -2.7047167
-      outSlope: -2.7047167
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.12292429
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  wheelWarmupDuration: 0.5
-  mainSpinDuration: 2.5
-  coastDuration: 2
-  dropDuration: 1
   settleDuration: 1
-  ballPositionDuration: 0.5
-  wheelSpinCount: 1
-  ballOrbitCount: 2
-  wheelBackspinAngle: -15
-  wheelWarmupForwardAngle: 30
-  spinHeight: 0.12
-  landingYOffset: 0.01
+  spinHeight: 0.11
+  orbitRadius: 1.5
+  landingYOffset: 0.05
   orbitWobbleAmplitude: 0.03
   orbitWobbleFrequency: 4
-  defaultOrbitRadius: 1.5
-  spinCountVariation: 1
-  orbitCountVariation: 1.5
+  rotationVariation: 0.5
+  orbitVariation: 1
   durationVariation: 0.5
 --- !u!1 &8410419188010117455
 GameObject:
@@ -29557,11 +29643,11 @@ Transform:
   m_GameObject: {fileID: 8797465923996192537}
   serializedVersion: 2
   m_LocalRotation: {x: 0.0000002682209, y: -0.7071067, z: -0.7071068, w: -0.0000002682209}
-  m_LocalPosition: {x: 0, y: 2.1528, z: 0}
-  m_LocalScale: {x: 0.2932351, y: 0.29323503, z: 0.14967777}
+  m_LocalPosition: {x: 0, y: 0.13580012, z: 0}
+  m_LocalScale: {x: 0.2932351, y: 0.293235, z: 0.14967775}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 6959171937565274234}
+  m_Father: {fileID: 8038071845527417909}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &3373769555296405005
 MeshFilter:
@@ -31016,15 +31102,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 420096, guid: 94c4ebb3710853d4bbd0c60f8195abea, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.014
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 420096, guid: 94c4ebb3710853d4bbd0c60f8195abea, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.58
+      value: 0.5138
       objectReference: {fileID: 0}
     - target: {fileID: 420096, guid: 94c4ebb3710853d4bbd0c60f8195abea, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.064
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 420096, guid: 94c4ebb3710853d4bbd0c60f8195abea, type: 3}
       propertyPath: m_LocalRotation.w
@@ -31090,7 +31176,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 6959171937565274234}
+    m_TransformParent: {fileID: 5386953675648094023}
     m_Modifications:
     - target: {fileID: 3836546486311558641, guid: 1cfe67023c928a64598135a485c2c6b9, type: 3}
       propertyPath: m_LocalScale.x
@@ -31106,15 +31192,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3836546486311558641, guid: 1cfe67023c928a64598135a485c2c6b9, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.36100006
+      value: 0.3610001
       objectReference: {fileID: 0}
     - target: {fileID: 3836546486311558641, guid: 1cfe67023c928a64598135a485c2c6b9, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 2.1369998
+      value: 0.11
       objectReference: {fileID: 0}
     - target: {fileID: 3836546486311558641, guid: 1cfe67023c928a64598135a485c2c6b9, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.3447
+      value: 0.34470016
       objectReference: {fileID: 0}
     - target: {fileID: 3836546486311558641, guid: 1cfe67023c928a64598135a485c2c6b9, type: 3}
       propertyPath: m_LocalRotation.w
