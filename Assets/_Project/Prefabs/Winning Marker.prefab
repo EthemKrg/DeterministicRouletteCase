@@ -97,6 +97,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 19877600, guid: 94c4ebb3710853d4bbd0c60f8195abea, type: 3}
+      propertyPath: startDelay.scalar
+      value: 2
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -117,15 +121,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 843f5e97d4a2cc14a9bf619731b513d9, type: 3}
       propertyPath: m_LocalScale.x
-      value: 62
+      value: 68.6
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 843f5e97d4a2cc14a9bf619731b513d9, type: 3}
       propertyPath: m_LocalScale.y
-      value: 62
+      value: 68.6
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 843f5e97d4a2cc14a9bf619731b513d9, type: 3}
       propertyPath: m_LocalScale.z
-      value: 62
+      value: 68.6
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 843f5e97d4a2cc14a9bf619731b513d9, type: 3}
       propertyPath: m_LocalPosition.x
@@ -166,6 +170,10 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 843f5e97d4a2cc14a9bf619731b513d9, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: -45
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 843f5e97d4a2cc14a9bf619731b513d9, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -7511558181221131132, guid: 843f5e97d4a2cc14a9bf619731b513d9, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'

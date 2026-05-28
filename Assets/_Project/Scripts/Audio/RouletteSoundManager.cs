@@ -17,6 +17,7 @@ public class RouletteSoundManager : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float ballDropVolume = 0.8f;
     [SerializeField, Range(0f, 1f)] private float winVolume = 0.8f;
     [SerializeField, Range(0f, 1f)] private float loseVolume = 0.7f;
+    [SerializeField, Range(0f, 1f)] private float buttonClickVolume = 0.5f;
 
     [Header("Audio Clips")]
     [SerializeField] private AudioClip[] chipPlacementClips;
@@ -25,6 +26,7 @@ public class RouletteSoundManager : MonoBehaviour
     [SerializeField] private AudioClip winClip;
     [SerializeField] private AudioClip loseClip;
     [SerializeField] private AudioClip musicLoopClip;
+    [SerializeField] private AudioClip buttonClickClip;
 
     [Header("Chip Sound Variation")]
     [SerializeField, Range(0.5f, 2f)] private float chipPitchMin = 0.95f;
@@ -98,7 +100,7 @@ public class RouletteSoundManager : MonoBehaviour
         PlayBallDropSound();
     }
 
-    private void PlayChipSound()
+    public void PlayChipSound()
     {
         if (chipPlacementClips == null || chipPlacementClips.Length == 0)
             return;
@@ -155,6 +157,15 @@ public class RouletteSoundManager : MonoBehaviour
         musicSource.clip = musicLoopClip;
         musicSource.loop = true;
         musicSource.Play();
+    }
+
+    public void PlayButtonClick()
+    {
+        if (buttonClickClip == null)
+            return;
+
+        float volume = masterVolume * sfxVolume * buttonClickVolume;
+        PlayOneShot(buttonClickClip, volume);
     }
 
     private void PlayOneShot(AudioClip clip, float volume, float pitch = 1f)

@@ -10,6 +10,7 @@ public class ChipStackViewController : MonoBehaviour
     [SerializeField] private ChipStackView chipStackPrefab;
     [SerializeField] private ChipVisualPool chipVisualPool;
     [SerializeField] private BalanceChipDisplayController balanceChipDisplayController;
+    [SerializeField] private RouletteSoundManager soundManager;
     [SerializeField] private Transform stackRoot;
 
     [Header("Placement")]
@@ -104,7 +105,7 @@ public class ChipStackViewController : MonoBehaviour
 
     public bool TryUndoTopChip(ChipStackView stackView)
     {
-        if (gameFlowController.GameState.FlowState != GameFlowState.Betting)
+        if (!gameFlowController.TryCanAcceptGameplayInput(GameplayInputKind.BetUndo, out _))
             return false;
 
         RouletteBetArea betArea = GetBetAreaForStack(stackView);
@@ -137,6 +138,9 @@ public class ChipStackViewController : MonoBehaviour
             pendingChipsByArea.Remove(betArea);
             DeactivateStack(stackView);
         }
+
+        if (soundManager != null)
+            soundManager.PlayChipSound();
 
         if (balanceChipDisplayController != null)
             balanceChipDisplayController.ReturnChipsToBalance(new List<ChipStackView.ReturnChip> { chip });
@@ -213,6 +217,10 @@ public class ChipStackViewController : MonoBehaviour
             stacksByArea.Clear();
             stakesByArea.Clear();
             pendingChipsByArea.Clear();
+
+            if (soundManager != null)
+                soundManager.PlayButtonClick();
+
             balanceChipDisplayController.ReturnChipsToBalance(returnChips);
             return;
         }

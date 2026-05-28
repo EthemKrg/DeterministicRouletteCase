@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
@@ -24,6 +25,10 @@ public class CameraAnimationController : MonoBehaviour
 
     private Camera cam;
     private Coroutine animationCoroutine;
+    private bool isReadyForBettingInput;
+
+    public event Action OnBettingInputReadinessChanged;
+    public bool IsReadyForBettingInput => isReadyForBettingInput;
 
     private void Awake()
     {
@@ -51,6 +56,7 @@ public class CameraAnimationController : MonoBehaviour
         {
             SnapToPosition(bettingPosition, bettingRotation);
             ApplyProjection(bettingIsOrthographic, bettingOrthographicSize);
+            SetBettingInputReady(true);
         }
     }
 
@@ -63,12 +69,17 @@ public class CameraAnimationController : MonoBehaviour
 
         if (state == GameFlowState.Betting)
         {
-            StartAnimation(bettingPosition, Quaternion.Euler(bettingRotation));
+            if (isReadyForBettingInput && animationCoroutine == null)
+                return;
+
+            SetBettingInputReady(false);
+            StartAnimation(bettingPosition, Quaternion.Euler(bettingRotation), true);
             ApplyProjection(bettingIsOrthographic, bettingOrthographicSize);
         }
         else if (state == GameFlowState.Spinning)
         {
-            StartAnimation(spinningPosition, Quaternion.Euler(spinningRotation));
+            SetBettingInputReady(false);
+            StartAnimation(spinningPosition, Quaternion.Euler(spinningRotation), false);
             ApplyProjection(spinningIsOrthographic, spinningOrthographicSize);
         }
     }
@@ -89,24 +100,28 @@ public class CameraAnimationController : MonoBehaviour
         cam.transform.SetPositionAndRotation(position, Quaternion.Euler(eulerAngles));
     }
 
-    private void StartAnimation(Vector3 targetPosition, Quaternion targetRotation)
+    private void StartAnimation(Vector3 targetPosition, Quaternion targetRotation, bool readyForBettingWhenComplete)
     {
         if (animationCoroutine != null)
             StopCoroutine(animationCoroutine);
 
-        animationCoroutine = StartCoroutine(AnimateToTarget(targetPosition, targetRotation));
+        animationCoroutine = StartCoroutine(AnimateToTarget(targetPosition, targetRotation, readyForBettingWhenComplete));
     }
 
-    private IEnumerator AnimateToTarget(Vector3 targetPosition, Quaternion targetRotation)
+    private IEnumerator AnimateToTarget(Vector3 targetPosition, Quaternion targetRotation, bool readyForBettingWhenComplete)
     {
+        if(targetPosition == bettingPosition) 
+            yield return new WaitForSeconds(1f);
+
         Transform ct = cam.transform;
         Vector3 startPosition = ct.position;
         Quaternion startRotation = ct.rotation;
         float elapsed = 0f;
+        float duration = Mathf.Max(0.01f, animationDuration);
 
-        while (elapsed < animationDuration)
+        while (elapsed < duration)
         {
-            float t = elapsed / animationDuration;
+            float t = elapsed / duration;
             float curveValue = animationCurve.Evaluate(t);
 
             ct.position = Vector3.LerpUnclamped(startPosition, targetPosition, curveValue);
@@ -119,5 +134,15 @@ public class CameraAnimationController : MonoBehaviour
         ct.SetPositionAndRotation(targetPosition, targetRotation);
 
         animationCoroutine = null;
+        SetBettingInputReady(readyForBettingWhenComplete);
+    }
+
+    private void SetBettingInputReady(bool ready)
+    {
+        if (isReadyForBettingInput == ready)
+            return;
+
+        isReadyForBettingInput = ready;
+        OnBettingInputReadinessChanged?.Invoke();
     }
 }

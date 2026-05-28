@@ -52,8 +52,17 @@ public class RouletteTableInputController : MonoBehaviour
             return;
 
         ChipStackView stackView = hit.collider.GetComponentInParent<ChipStackView>();
-        if (stackView != null && chipStackViewController.TryUndoTopChip(stackView))
-            return;
+        if (stackView != null)
+        {
+            if (!gameFlowController.TryCanAcceptGameplayInput(GameplayInputKind.BetUndo, out string undoReason))
+            {
+                gameFlowController.RequestFeedback(undoReason);
+                return;
+            }
+
+            if (chipStackViewController.TryUndoTopChip(stackView))
+                return;
+        }
 
         RouletteBetArea betArea = hit.collider.GetComponentInParent<RouletteBetArea>();
         if (betArea == null)
@@ -64,8 +73,11 @@ public class RouletteTableInputController : MonoBehaviour
 
     private void TryPlaceBet(RouletteBetArea betArea, ChipDenomination selectedChip, int stake)
     {
-        if (gameFlowController.GameState.FlowState != GameFlowState.Betting)
+        if (!gameFlowController.TryCanAcceptGameplayInput(GameplayInputKind.BetPlacement, out string reason))
+        {
+            gameFlowController.RequestFeedback(reason);
             return;
+        }
 
         if (!betArea.IsAvailableForWheelType(gameFlowController.GameState.WheelType))
         {
@@ -150,6 +162,9 @@ public class RouletteTableInputController : MonoBehaviour
     private RouletteBetArea GetBetAreaAtScreenPosition(Vector2 screenPosition)
     {
         if (IsPointerBlockedByUi(-1) || IsPointerBlockedByTableControl(screenPosition))
+            return null;
+
+        if (!gameFlowController.TryCanAcceptGameplayInput(GameplayInputKind.BetPlacement, out _))
             return null;
 
         if (!TryGetTableHit(screenPosition, out RaycastHit hit))

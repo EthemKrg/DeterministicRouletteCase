@@ -5,6 +5,7 @@ public class TableGameControls3DView : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private GameFlowController gameFlowController;
+    [SerializeField] private RouletteSoundManager soundManager;
     [SerializeField] private TMP_InputField winningSlotInput;
     [SerializeField] private TableGameControls3DButton[] buttons;
 
@@ -37,6 +38,16 @@ public class TableGameControls3DView : MonoBehaviour
     {
         if (button == null || !button.IsInteractable)
             return;
+
+        if (!gameFlowController.TryCanAcceptGameplayInput(GameplayInputKind.TableControl, out string reason))
+        {
+            RequestFeedback(reason);
+            RefreshControls();
+            return;
+        }
+
+        if (soundManager != null)
+            soundManager.PlayButtonClick();
 
         button.PlayPressAnimation();
 
@@ -113,11 +124,11 @@ public class TableGameControls3DView : MonoBehaviour
     private void RefreshControls()
     {
         RouletteGameState state = gameFlowController.GameState;
-        bool isBettingState = state.FlowState == GameFlowState.Betting;
+        bool canUseTableControls = gameFlowController.TryCanAcceptGameplayInput(GameplayInputKind.TableControl, out _);
         bool hasActiveBets = state.ActiveBets.Count > 0;
         bool isWinningSlotValid = IsOptionalResultSlotValid(GetWinningSlotId());
 
-        winningSlotInput.interactable = isBettingState;
+        winningSlotInput.interactable = canUseTableControls;
 
         foreach (TableGameControls3DButton button in buttons)
         {
@@ -127,15 +138,15 @@ public class TableGameControls3DView : MonoBehaviour
             switch (button.Action)
             {
                 case TableGameControls3DButton.ControlAction.Spin:
-                    button.SetState(isBettingState && hasActiveBets && isWinningSlotValid);
+                    button.SetState(canUseTableControls && hasActiveBets && isWinningSlotValid);
                     break;
 
                 case TableGameControls3DButton.ControlAction.ClearBets:
-                    button.SetState(isBettingState && hasActiveBets);
+                    button.SetState(canUseTableControls && hasActiveBets);
                     break;
 
                 case TableGameControls3DButton.ControlAction.ToggleWheelType:
-                    button.SetState(isBettingState);
+                    button.SetState(canUseTableControls);
                     break;
             }
         }

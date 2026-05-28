@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class SaveGameManager : MonoBehaviour
 {
@@ -13,6 +14,7 @@ public class SaveGameManager : MonoBehaviour
     [SerializeField] private bool logSaveOperations = true;
 
     private bool hasRestored;
+    private bool isResettingData;
 
     private void Awake()
     {
@@ -98,6 +100,9 @@ public class SaveGameManager : MonoBehaviour
 
     public void Save()
     {
+        if (isResettingData)
+            return;
+
         if (gameFlowController == null || gameFlowController.GameState == null)
         {
             Debug.Log("[SaveGameManager] Save skipped: GameFlowController or GameState not available.");
@@ -189,6 +194,21 @@ public class SaveGameManager : MonoBehaviour
             SaveGameRepository.DeleteSave();
             Debug.Log("[SaveGameManager] Game started with default state after corrupt save.");
         }
+    }
+
+    public void ResetDataAndRestartScene()
+    {
+        isResettingData = true;
+
+        Debug.Log("[SaveGameManager] Resetting all data and restarting scene.");
+
+        SaveGameRepository.DeleteSave();
+
+        if (gameFlowController != null)
+            gameFlowController.ClearSaveData();
+
+        int currentSceneIndex = SceneManager.GetActiveScene().buildIndex;
+        SceneManager.LoadScene(currentSceneIndex);
     }
 
     private void ValidateReferences()

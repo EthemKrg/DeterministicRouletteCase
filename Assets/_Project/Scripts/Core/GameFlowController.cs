@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using UnityEngine;
 
 public class GameFlowController : MonoBehaviour
@@ -16,6 +15,12 @@ public class GameFlowController : MonoBehaviour
 
     [Header("Wheel Animation")]
     [SerializeField] private RouletteWheelSpinAnimator wheelAnimator;
+    [SerializeField] private CameraAnimationController cameraAnimationController;
+
+    private SpinSession pendingSpinSession;
+
+    public bool IsSpinSessionActive => pendingSpinSession != null;
+    public bool CanAcceptGameplayInput => TryCanAcceptGameplayInput(GameplayInputKind.TableControl, out _);
 
     private void Awake()
     {
@@ -25,18 +30,42 @@ public class GameFlowController : MonoBehaviour
         NotifyStateChanged();
     }
 
+    private void OnEnable()
+    {
+        if (cameraAnimationController != null)
+            cameraAnimationController.OnBettingInputReadinessChanged += HandleBettingInputReadinessChanged;
+    }
+
+    private void OnDisable()
+    {
+        if (cameraAnimationController != null)
+            cameraAnimationController.OnBettingInputReadinessChanged -= HandleBettingInputReadinessChanged;
+    }
+
+    private void Update()
+    {
+        if (pendingSpinSession == null)
+        {
+            RecoverVisualStateIfNeeded();
+            return;
+        }
+
+        if (Time.unscaledTime < pendingSpinSession.CompleteAt)
+            return;
+
+        CompleteSpinSession();
+    }
+
     private void OnDestroy()
     {
-        StopAllCoroutines();
-
-        if (GameState != null && GameState.FlowState == GameFlowState.Spinning)
-        {
-            GameState.SetFlowState(GameFlowState.Betting);
-        }
+        pendingSpinSession = null;
     }
 
     public void SetWheelType(RouletteWheelType wheelType)
     {
+        if (!TryCanAcceptGameplayInput(GameplayInputKind.TableControl, out string reason))
+            throw new InvalidOperationException(reason);
+
         bool changed = GameState.SetWheelType(wheelType);
 
         if (changed)
@@ -118,8 +147,8 @@ public class GameFlowController : MonoBehaviour
 
     public void Spin(string winningSlotId)
     {
-        if (GameState.FlowState != GameFlowState.Betting)
-            throw new InvalidOperationException("Spin can only start during betting state.");
+        if (!TryCanAcceptGameplayInput(GameplayInputKind.TableControl, out string inputReason))
+            throw new InvalidOperationException(inputReason);
 
         if (GameState.ActiveBets.Count == 0)
             throw new InvalidOperationException("Place at least one bet before spinning.");
@@ -129,29 +158,135 @@ public class GameFlowController : MonoBehaviour
         if (winningSlot == null)
             throw new ArgumentException($"Winning slot not found: {winningSlotId}", nameof(winningSlotId));
 
+        RoundResult pendingResult = BetResolver.Resolve(winningSlot, GameState.ActiveBets);
+        float visualDuration = StartSpinVisual(winningSlot);
+
+        pendingSpinSession = new SpinSession(pendingResult, Time.unscaledTime + visualDuration);
+
         GameState.SetFlowState(GameFlowState.Spinning);
         NotifyStateChanged();
-
-        StartCoroutine(SpinRoutine(winningSlot));
     }
 
-    private IEnumerator SpinRoutine(RouletteSlot winningSlot)
+    public bool TryCanAcceptGameplayInput(GameplayInputKind kind, out string reason)
     {
+        reason = string.Empty;
+
+        if (GameState == null)
+        {
+            reason = "Game state is not ready.";
+            return false;
+        }
+
+        if (GameState.FlowState == GameFlowState.Spinning && pendingSpinSession == null)
+        {
+            RecoverInvalidSpinState("Spinning state had no active spin session.");
+            reason = "Game recovered from an invalid spin state. Try again.";
+            return false;
+        }
+
+        if (pendingSpinSession != null)
+        {
+            reason = "Spin is in progress.";
+            return false;
+        }
+
+        if (GameState.FlowState != GameFlowState.Betting)
+        {
+            reason = "Gameplay input is only accepted during betting state.";
+            return false;
+        }
+
+        if (wheelAnimator != null && wheelAnimator.IsSpinAnimationPlaying)
+        {
+            RecoverInvalidSpinState("Wheel animation was still playing while game state was betting.");
+            reason = "Wheel animation state was reset. Try again.";
+            return false;
+        }
+
+        if (cameraAnimationController != null && !cameraAnimationController.IsReadyForBettingInput)
+        {
+            reason = "Betting view is not ready yet.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private float StartSpinVisual(RouletteSlot winningSlot)
+    {
+        if (wheelAnimator == null)
+            return 0f;
+
+        return wheelAnimator.PlaySpin(winningSlot);
+    }
+
+    private void CompleteSpinSession()
+    {
+        if (pendingSpinSession == null)
+            return;
+
+        RoundResult result = pendingSpinSession.Result;
+        pendingSpinSession = null;
+
         if (wheelAnimator != null)
-            yield return wheelAnimator.AnimateSpin(winningSlot);
+            wheelAnimator.StopSpinAnimation();
 
         GameState.SetFlowState(GameFlowState.Resolving);
         NotifyStateChanged();
 
-        LastRoundResult = BetResolver.Resolve(winningSlot, GameState.ActiveBets);
+        try
+        {
+            LastRoundResult = result;
 
-        GameState.ApplyRoundResult(LastRoundResult);
-        StatisticsTracker.TrackRound(LastRoundResult, GameState.WheelType);
+            GameState.ApplyRoundResult(LastRoundResult);
+            StatisticsTracker.TrackRound(LastRoundResult, GameState.WheelType);
+
+            GameState.SetFlowState(GameFlowState.Betting);
+
+            OnRoundResolved?.Invoke(LastRoundResult);
+            NotifyStateChanged();
+        }
+        catch (Exception exception)
+        {
+            Debug.LogError($"GameFlowController: Spin resolution failed with exception: {exception.Message}");
+            RecoverInvalidSpinState(exception.Message);
+        }
+    }
+
+    private void RecoverInvalidSpinState(string reason)
+    {
+        pendingSpinSession = null;
+
+        if (wheelAnimator != null)
+            wheelAnimator.StopSpinAnimation();
 
         GameState.SetFlowState(GameFlowState.Betting);
-
-        OnRoundResolved?.Invoke(LastRoundResult);
         NotifyStateChanged();
+
+        if (!string.IsNullOrWhiteSpace(reason))
+        {
+            Debug.LogWarning($"GameFlowController recovered state: {reason}");
+            OnFeedbackRequested?.Invoke("Game state recovered. Try again.");
+        }
+    }
+
+    private void RecoverVisualStateIfNeeded()
+    {
+        if (GameState == null)
+            return;
+
+        if (GameState.FlowState == GameFlowState.Spinning)
+        {
+            RecoverInvalidSpinState("Spinning state had no active spin session.");
+            return;
+        }
+
+        if (GameState.FlowState == GameFlowState.Betting &&
+            wheelAnimator != null &&
+            wheelAnimator.IsSpinAnimationPlaying)
+        {
+            RecoverInvalidSpinState("Wheel animation was still playing while game state was betting.");
+        }
     }
 
     private RouletteSlot GetSpinResult(string winningSlotId)
@@ -166,6 +301,9 @@ public class GameFlowController : MonoBehaviour
 
     public void ClearBets()
     {
+        if (!TryCanAcceptGameplayInput(GameplayInputKind.TableControl, out string reason))
+            throw new InvalidOperationException(reason);
+
         bool hadActiveBets = GameState.ActiveBets.Count > 0;
 
         GameState.ClearBets();
@@ -182,6 +320,19 @@ public class GameFlowController : MonoBehaviour
         OnGameStateChanged?.Invoke();
     }
 
+    private void HandleBettingInputReadinessChanged()
+    {
+        if (GameState == null ||
+            GameState.FlowState != GameFlowState.Betting ||
+            cameraAnimationController == null ||
+            !cameraAnimationController.IsReadyForBettingInput)
+        {
+            return;
+        }
+
+        NotifyStateChanged();
+    }
+
     public void PlacePreparedBet(RouletteBet bet)
     {
         PlaceBet(bet);
@@ -191,7 +342,7 @@ public class GameFlowController : MonoBehaviour
     {
         refundedStake = 0;
 
-        if (GameState.FlowState != GameFlowState.Betting)
+        if (!TryCanAcceptGameplayInput(GameplayInputKind.BetUndo, out _))
             return false;
 
         bool removed = GameState.TryRemoveLastMatchingBet(betTemplate, out refundedStake);
@@ -217,6 +368,9 @@ public class GameFlowController : MonoBehaviour
 
     private void PlaceBet(RouletteBet bet)
     {
+        if (!TryCanAcceptGameplayInput(GameplayInputKind.BetPlacement, out string reason))
+            throw new InvalidOperationException(reason);
+
         GameState.PlaceBet(bet);
 
         OnBetPlaced?.Invoke();
@@ -334,7 +488,10 @@ public class GameFlowController : MonoBehaviour
             saveData.americanStats);
 
         LastRoundResult = null;
-        StopAllCoroutines();
+        pendingSpinSession = null;
+
+        if (wheelAnimator != null)
+            wheelAnimator.StopSpinAnimation();
     }
 
     public void ClearSaveData()
@@ -342,12 +499,27 @@ public class GameFlowController : MonoBehaviour
         GameState = new RouletteGameState();
         StatisticsTracker = new StatisticsTracker();
         LastRoundResult = null;
-        StopAllCoroutines();
+        pendingSpinSession = null;
+
+        if (wheelAnimator != null)
+            wheelAnimator.StopSpinAnimation();
     }
 
 
     public System.Collections.Generic.IReadOnlyList<RouletteBet> GetActiveBetsForSnapshot()
     {
         return GameState.ActiveBets;
+    }
+
+    private class SpinSession
+    {
+        public SpinSession(RoundResult result, float completeAt)
+        {
+            Result = result;
+            CompleteAt = completeAt;
+        }
+
+        public RoundResult Result { get; }
+        public float CompleteAt { get; }
     }
 }

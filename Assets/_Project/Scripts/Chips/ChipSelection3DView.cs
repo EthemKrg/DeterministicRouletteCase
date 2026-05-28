@@ -3,6 +3,7 @@ using UnityEngine;
 public class ChipSelection3DView : MonoBehaviour
 {
     [SerializeField] private ChipSelectionController chipSelectionController;
+    [SerializeField] private RouletteSoundManager soundManager;
     [SerializeField] private GameFlowController gameFlowController;
     [SerializeField] private ChipSelection3DButton[] buttons;
     
@@ -39,6 +40,12 @@ public class ChipSelection3DView : MonoBehaviour
 
     public void Select(ChipDenomination denomination)
     {
+        if (!gameFlowController.TryCanAcceptGameplayInput(GameplayInputKind.ChipSelection, out _))
+            return;
+
+        if (soundManager != null)
+            soundManager.PlayButtonClick();
+
         chipSelectionController.SetSelectedChip(denomination);
         RefreshSelection((int)denomination);
     }

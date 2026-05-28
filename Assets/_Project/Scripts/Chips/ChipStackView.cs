@@ -20,6 +20,7 @@ public class ChipStackView : MonoBehaviour
     [SerializeField] private TMP_Text totalStakeLabel;
     [SerializeField] private Vector3 chipStackOffset = new Vector3(0f, 0.025f, 0f);
     [SerializeField] private Vector3 hitBoxSize = new Vector3(0.35f, 0.18f, 0.35f);
+    [SerializeField] private float chipScale = 0.8f;
 
     private readonly List<ReturnChip> chips = new List<ReturnChip>();
 
@@ -57,7 +58,7 @@ public class ChipStackView : MonoBehaviour
         int chipIndex = chips.Count;
         chip.transform.localPosition = chipStackOffset * chipIndex;
         chip.transform.localRotation = Quaternion.identity;
-        chip.transform.localScale = Vector3.one;
+        chip.transform.localScale = chipScale * Vector3.one;
 
         if (totalStakeLabel != null)
             totalStakeLabel.transform.localPosition = defaultTotalStakeLabelLocalPos + chipStackOffset * chipIndex;
