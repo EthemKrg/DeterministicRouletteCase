@@ -288,11 +288,11 @@ public class DebugGameFlowUI : MonoBehaviour
         bool isWinningSlotValid = IsOptionalResultSlotValid(winningSlotInput.text.Trim());
         bool isStraightBetSlotValid = IsSlotValid(straightBetSlotInput.text.Trim());
         bool hasActiveBets = gameFlowController.GameState.ActiveBets.Count > 0;
-        bool isBettingState = gameFlowController.GameState.FlowState == GameFlowState.Betting;
+        bool canUseGameplayControls = gameFlowController.TryCanAcceptGameplayInput(GameplayInputKind.TableControl, out _);
 
-        spinButton.interactable = isWinningSlotValid && hasActiveBets && isBettingState;
-        addStraightButton.interactable = isStraightBetSlotValid && isBettingState;
-        clearBetsButton.interactable = hasActiveBets && isBettingState;
+        spinButton.interactable = isWinningSlotValid && hasActiveBets && canUseGameplayControls;
+        addStraightButton.interactable = isStraightBetSlotValid && canUseGameplayControls;
+        clearBetsButton.interactable = hasActiveBets && canUseGameplayControls;
     }
 
     private bool ValidateInputs(bool showFeedback)
