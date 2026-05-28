@@ -1,8 +1,10 @@
-# Deterministic Roulette Case
+# Deterministic Roulette Case Study
 
-A Unity case study for a deterministic single-player roulette prototype.
+A Unity 6 single-player roulette prototype built for a game developer case study.
 
-The goal is to make a small but complete roulette flow with manual result selection, table betting, chip balance, payouts and basic player stats.
+The main idea is to keep the normal roulette flow, but also make the result controllable for testing. The player can select the next winning slot from the UI before spinning. If no result is selected, the game picks a random valid slot for the active wheel type.
+
+The project includes European and American roulette modes, 3D table betting, chip balance, payouts, player statistics, wheel and ball animation, audio feedback, save/load, and a few polish features around the winning result.
 
 ## Unity Version
 
@@ -10,166 +12,247 @@ Unity 6000.4.4f1
 
 ## How to Run
 
-1. Open the project with Unity 6000.4.4f1 or a compatible Unity 6000 version.
+1. Open the project with Unity 6000.4.4f1 or a compatible Unity 6 version.
 2. Open `Assets/_Project/Scenes/Main.unity`.
 3. Enter Play Mode.
-4. Use the table and the debug panel to test the game.
+4. Use the table and UI controls to place bets, select a result if needed, and spin the wheel.
 
 ## How to Play
 
-1. Select a chip value.
-2. Place bets on the 3D roulette table.
-3. Optionally select the next winning number from the UI.
-4. Spin the round.
-5. The result is resolved and chips/statistics are updated.
+1. Select a chip denomination from the chip bar at the bottom of the table.
+2. Click or tap a betting area on the 3D roulette table.
+3. Optionally select the next winning number before spinning.
+4. Press `SPIN` to start the round.
+5. The wheel and ball animation plays, the result is resolved, and chips/statistics are updated.
 
-If no result is selected, the game picks a random result for the active roulette type.
+If no deterministic result is selected, the game uses a random result for the selected roulette type.
 
-Placed chip stacks can be tapped to undo the top chip from that bet.
+Placed chip stacks can be tapped before spinning to undo the top chip from that bet. Active bets can also be cleared from the UI before the round starts.
 
-## Current State
+## Table UI
 
-Implemented so far:
+The main gameplay UI is kept around the roulette table so the player can test the full flow without leaving the scene.
 
-- European roulette data
-- American roulette data with `00`
-- Roulette type switch
-- Chip balance
-- Bet limits
-- Chip denomination selection
+- The chip bar is used to select the active chip value.
+- `SPIN` starts the current round.
+- `CLEAR` removes all active bets before spinning.
+- `TOGGLE` switches between European and American roulette modes.
+- `WINNER` is used to select or change the deterministic winning result.
+- The balance display shows the current chip amount.
+- Feedback text is shown above the table for short gameplay messages.
+
+## Implemented Features
+
 - Deterministic result selection
-- Random result fallback when no result is selected
-- Chip stack visuals for placed bets
-- Tap-to-undo for placed chip stacks
-- Runtime win/loss, profit/loss, total wagered and best win stats
-- Separate statistics for European and American roulette
-- Full bet logic for:
-  - Straight
-  - Split
-  - Street
-  - Corner
-  - Six Line
-  - Red / Black
-  - Even / Odd
-  - Low / High
-  - Dozens
-  - Columns
-- Full 3D table betting layout
-- Collider based table input
-- New Input System based raycast input
-- Hover preview for covered numbers
-- 3D marker for the last winning number
-- Basic feedback text
-- Temporary debug UI for testing
+- Random result fallback
+- European roulette support
+- American roulette support with `00`
+- Runtime roulette type switching
+- Chip denomination selection
+- Chip balance and bet limits
+- 3D roulette table interaction
+- Table-centered UI for chips, balance, spin controls, and deterministic result selection
+- Collider/raycast based table betting
+- Hover/result highlight feedback
+- Animated chip stacks
+- Undo from placed chip stacks
+- Full payout calculation
+- Overall and per-wheel player statistics
+- Wheel and ball animation
+- Camera transition between betting and spin views
+- Audio feedback for chips, spin, ball drop, win/lose, and background music
+- Winning number display
+- Confetti effect on winning rounds
+- Save/load with local JSON data
+- Auto-save on gameplay state changes
 
-## Table Interaction
+## Roulette Rules and Payouts
 
-Betting is done on the 3D table.
+Supported bet types:
 
-The current flow is:
+| Bet Type | Payout |
+|---|---:|
+| Straight | 35:1 |
+| Split | 17:1 |
+| Street | 11:1 |
+| Corner | 8:1 |
+| Six Line | 5:1 |
+| Red / Black | 1:1 |
+| Even / Odd | 1:1 |
+| Low / High | 1:1 |
+| Dozen | 2:1 |
+| Column | 2:1 |
 
-`3D bet area -> RouletteBetArea -> RouletteTableInputController -> GameFlowController`
+When a bet is placed, the stake is removed from the chip balance immediately. If the bet wins, the original stake and profit are returned. If the bet loses, the stake is kept by the table.
 
-The table has generated collider areas for all required bet types. Some line and corner bet areas are still visible for testing. These will need a visual polish pass later so the table looks less like a debug layout.
+## Wheel and Ball Animation
 
-## Debug UI
+The wheel and ball animation is handled by `RouletteWheelSpinAnimator`.
 
-The debug UI is still used for testing.
+The spin is split into a few readable phases instead of being one long movement:
 
-It supports:
+1. Wheel warmup and acceleration
+2. Ball release with opposite-direction orbit
+3. Ball coast toward the target pocket
+4. Ball drop into the pocket area
+5. Small settle movement at the end
 
-- Selecting European or American roulette
-- Setting the next winning number, or leaving it empty for a random result
-- Spinning the round
-- Clearing active bets
-- Viewing chips, active bets, overall statistics, current roulette type statistics and last round result
+The animation uses pocket transforms for the final result position, so deterministic results can land on the selected slot reliably. The camera also transitions from the top-down betting view to a perspective spin view during the round.
 
-Final betting should happen on the 3D table, not through debug bet buttons.
+## Save and Load
 
-## Rules and Payouts
+The project includes a small persistence layer.
 
-Current payout multipliers:
+Main files:
 
-- Straight: 35:1
-- Split: 17:1
-- Street: 11:1
-- Corner: 8:1
-- Six Line: 5:1
-- Red / Black: 1:1
-- Even / Odd: 1:1
-- Low / High: 1:1
-- Dozen: 2:1
-- Column: 2:1
+- `SaveGameManager.cs`
+- `SaveGameRepository.cs`
+- `SaveGameData.cs`
 
-Placing a bet decreases chips immediately.
+The save system stores:
 
-If a bet wins, the original stake and profit are returned. If a bet loses, the stake is not returned.
+- Current chip balance
+- Active bets
+- Selected chip denomination
+- Selected roulette type
+- Last round result
+- Overall statistics
+- European roulette statistics
+- American roulette statistics
 
-Win feedback is based on whether at least one bet wins. Profit/loss is tracked separately.
+Data is saved as JSON using Unity's `JsonUtility`. File writing is handled through a temp-file-then-replace flow, so the save file is less likely to be left in a broken state if something interrupts the write.
 
-## Code Notes
+## Statistics
 
-Main scripts:
+Statistics are tracked through `StatisticsTracker` and `PlayerStatistics`.
 
-- `GameFlowController`: controls round flow and sends state/result events.
-- `RouletteGameState`: stores chips, active bets, limits, wheel type and flow state.
-- `RouletteBetFactory`: creates valid roulette bets.
-- `RouletteTableLayout`: handles table positions for inside bets.
-- `BetResolver`: resolves active bets against the winning slot.
-- `StatisticsTracker`: tracks player stats.
-- `RouletteBetArea`: stores data for one table bet area.
-- `RouletteTableInputController`: reads pointer input and places table bets.
-- `ChipSelectionController`: stores the selected chip value.
+The game tracks:
 
-Patterns used:
+- Spins played
+- Wins
+- Losses
+- Profit/loss
+- Total wagered
+- Best win
+- Last round data
 
-- Factory for bet creation.
-- Events for state and round result updates.
-- Separate state object for the current roulette session.
-- Small helper class for roulette table layout rules.
+Statistics are kept both overall and separately for European and American roulette modes.
 
-## Development Constraints
+## Code Structure
 
-- No third-party gameplay/code plugins.
-- No DOTween.
-- No reused scripts from other projects.
-- Unity UI is allowed.
-- External art/audio assets can be used if the license allows it.
+The main gameplay flow is:
 
-## Asset Optimization Notes
+`Table Input -> Bet Area -> Game Flow -> Spin Animation -> Bet Resolver -> UI / Stats / Save`
 
-The table and wheel have a lot of small number labels. Keeping them as imported mesh text was overkill, so the plan is to use TextMeshPro for the labels and bake them down into a few combined meshes.
+Important scripts:
 
-That keeps the numbers readable without carrying hundreds of tiny text meshes at runtime.
+- `GameFlowController.cs`  
+  Controls the main round flow, bet placement, spin routine, result resolving, events, and save/load API.
 
-## Planned Work
+- `RouletteGameState.cs`  
+  Stores current session data such as chips, active bets, roulette type, and flow state.
 
-Next work:
+- `RouletteBetFactory.cs`  
+  Creates valid roulette bets from table input.
 
-- Add 3D wheel spin animation
-- Add ball drop / landing animation
-- Add American five-number bet
-- Add save/load
-- Add auto-save and resume
-- Polish the table visuals
-- Polish the final UI
-- Add sound effects
-- Add simple win VFX
-- Record demo video
+- `BetResolver.cs`  
+  Resolves all active bets against the winning slot.
 
-## Known Issues
+- `PayoutCalculator.cs`  
+  Holds payout multipliers for each bet type.
 
-- Wheel and ball animations are not implemented yet.
-- Save/load is not implemented yet.
-- Audio and VFX are not implemented yet.
-- UI is still partly debug focused.
-- Some table bet areas need visual cleanup.
-- Demo video link will be added before submission.
+- `RouletteTableInputController.cs`  
+  Reads pointer input and sends selected table areas to the game flow.
 
-## Demo Video
+- `RouletteBetArea.cs`  
+  Stores bet area data and preview/covered slot information.
 
-Demo video link will be added before submission.
+- `RouletteTableHighlightController.cs`  
+  Handles hover and result highlights on the table.
 
-## Repository
+- `ChipStackViewController.cs`  
+  Creates, updates, clears, restores, and animates chip stacks.
 
-The project is developed with regular commits and feature branches.
+- `ChipVisualPool.cs`  
+  Reuses chip visuals instead of creating and destroying them repeatedly.
+
+- `RouletteWheelSpinAnimator.cs`  
+  Handles the wheel and ball spin sequence.
+
+- `CameraAnimationController.cs`  
+  Switches between betting and spin camera views.
+
+- `RouletteSoundManager.cs`  
+  Handles chip, spin, ball drop, win/lose, and BGM audio.
+
+- `WinningNumberDisplayController.cs`  
+  Shows the winning result and triggers the win effect.
+
+- `SaveGameManager.cs`  
+  Coordinates save/load and restore flow.
+
+- `SaveGameRepository.cs`  
+  Handles JSON file I/O.
+
+## Design Patterns
+
+I kept the architecture simple and only used patterns where they made the code easier to follow.
+
+### Factory
+
+`RouletteBetFactory` handles bet creation. This keeps table input separate from the detailed rules of each bet type.
+
+### Observer / Event-Driven Updates
+
+`GameFlowController` exposes events such as game state changes, round resolved, bet placed, bets cleared, and feedback requested. UI, audio, chip visuals, statistics, and save/load systems react to these events instead of being tightly connected to each other.
+
+### State
+
+`RouletteGameState` stores the active game session, while `GameFlowState` keeps the current flow clear: betting, spinning, and resolving.
+
+### Object Pool
+
+`ChipVisualPool` is used for chip visuals. Chip objects are reused instead of being destroyed and recreated every time a bet changes.
+
+### Repository
+
+`SaveGameRepository` separates file writing/reading from gameplay logic. The game flow does not need to know the details of JSON file handling.
+
+### Snapshot
+
+Game state and statistics can be exported and restored through save data objects. This made save/load simpler because the runtime state can be rebuilt from a clear snapshot.
+
+## Optimization Notes
+
+A few small optimizations were done during development:
+
+- Table number labels use TMP mesh baking, so they do not need to stay as many live text objects at runtime.
+- Some scene objects use one-faced meshes where the back side is never visible.
+- Materials were tested with separate instances while tuning the look, then unnecessary unique material instances were reduced where possible.
+- Chip visuals are pooled instead of constantly instantiated and destroyed.
+- Chip stack visuals update when bet data changes instead of rebuilding every frame.
+- UI refreshes are mostly event-driven through `GameFlowController` events.
+- Table bet areas keep their own bet metadata, which keeps the input controller lightweight.
+- Procedural table line meshes are used for some table visuals instead of maintaining every line by hand.
+- The project avoids third-party runtime/code plugins.
+- DOTween was not used. Animation is handled with Unity coroutines, curves, transforms, audio sources, and particle systems.
+
+## Assets and Constraints
+
+The gameplay code was written for this case study.
+
+All 2D and 3D visual assets used in the project were generated by me with AI tools, then selected and adjusted to fit the same casino table style. This includes the visual direction for the table, chips, UI-related visuals, and scene presentation assets.
+
+Sound effects and music were taken from my licensed Ovani audio asset package.
+
+No third-party gameplay/code plugins were used. Unity built-in systems were preferred for animation, UI, audio playback, saving, and effects. DOTween was not used.
+
+## Known Limitations and Future Improvements
+
+The current version covers the main gameplay, deterministic result flow, statistics, save/load, audio, and visual feedback. A few areas could still be improved with more time:
+
+- The wheel and ball animation could be made more natural with a physics-based ball system.
+- Ball-pocket interaction could be improved with more realistic collision and bounce behavior.
+- Camera timing during the spin could be tuned further.
+- More sound variations could be added for repeated chip placement and round results.
+- The table materials and surrounding environment could use another visual polish pass.
