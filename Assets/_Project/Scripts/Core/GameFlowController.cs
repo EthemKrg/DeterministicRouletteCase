@@ -9,6 +9,7 @@ public class GameFlowController : MonoBehaviour
     public RoundResult LastRoundResult { get; private set; }
 
     public event Action OnGameStateChanged;
+    public event Action OnBetPlaced;
     public event Action<RoundResult> OnRoundResolved;
     public event Action<string> OnFeedbackRequested;
     public event Action OnBetsCleared;
@@ -218,6 +219,7 @@ public class GameFlowController : MonoBehaviour
     {
         GameState.PlaceBet(bet);
 
+        OnBetPlaced?.Invoke();
         OnFeedbackRequested?.Invoke(CreateBetPlacedMessage(bet));
 
         NotifyStateChanged();

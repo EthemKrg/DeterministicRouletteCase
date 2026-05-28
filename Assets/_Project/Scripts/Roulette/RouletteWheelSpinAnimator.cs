@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
@@ -55,6 +56,8 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
     [SerializeField] private float orbitCountVariation = 1.5f;
     [SerializeField] private float durationVariation = 0.5f;
 
+    public event Action OnBallDropStarted;
+
     private Transform[] euPocketTransforms;
     private Transform[] usPocketTransforms;
     private Transform[] currentPocketTransforms;
@@ -94,9 +97,9 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
     public IEnumerator AnimateSpin(RouletteSlot winningSlot)
     {
         // Apply random variation for this spin
-        float effectiveWheelSpinCount = wheelSpinCount + Random.Range(-spinCountVariation, spinCountVariation);
-        float effectiveBallOrbitCount = ballOrbitCount + Random.Range(-orbitCountVariation, orbitCountVariation);
-        float effectiveMainSpinDuration = mainSpinDuration + Random.Range(-durationVariation, durationVariation);
+        float effectiveWheelSpinCount = wheelSpinCount + UnityEngine.Random.Range(-spinCountVariation, spinCountVariation);
+        float effectiveBallOrbitCount = ballOrbitCount + UnityEngine.Random.Range(-orbitCountVariation, orbitCountVariation);
+        float effectiveMainSpinDuration = mainSpinDuration + UnityEngine.Random.Range(-durationVariation, durationVariation);
 
         yield return SpinRoutine();                                                    // Phase 0: wheel warmup
         yield return BallReleaseRoutine(winningSlot, effectiveWheelSpinCount,          // Phase 1: ball released, both spin
@@ -159,7 +162,7 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
         Transform targetPocket = GetPocketForSlot(winningSlot);
         Vector3 localTarget = wheelSpace.InverseTransformPoint(targetPocket.position);
         float targetAngle = Mathf.Atan2(localTarget.z, localTarget.x);
-        float randomOffset = Random.Range(-0.3f, 0.3f);
+        float randomOffset = UnityEngine.Random.Range(-0.3f, 0.3f);
         float releaseAngle = targetAngle + Mathf.PI + randomOffset;
 
         // Read ball's current scene position
@@ -310,6 +313,8 @@ public class RouletteWheelSpinAnimator : MonoBehaviour
     /// </summary>
     private IEnumerator DropRoutine(RouletteSlot winningSlot)
     {
+        OnBallDropStarted?.Invoke();
+
         Transform targetPocket = GetPocketForSlot(winningSlot);
         Vector3 targetPosition = targetPocket.position + Vector3.up * landingYOffset;
         Vector3 localTarget = wheelSpace.InverseTransformPoint(targetPosition);
